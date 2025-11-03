@@ -57,22 +57,12 @@ class Stepper:
     def __step(self, dir):
         self.step_state += dir    # increment/decrement the step
         self.step_state %= 8      # ensure result stays in [0,7]
-        
-        # 4-bit coil pattern for this motor
-        mask   = 0b1111 << self.shifter_bit_start
-        pattern = Stepper.seq[self.step_state] << self.shifter_bit_start
-
-        # Clear existing bits only for this motor
-        Stepper.shifter_outputs &= ~mask
-        # Set this motor's new coil pattern
-        Stepper.shifter_outputs |= pattern
-
+        step_clear=0b1111<<self.shifter_bit_start
+        Stepper.shifter_outputs &= ~step_clear
+        Stepper.shifter_outputs |=Stepper.seq[self.step_state]<<self.shifter_bit_start
         self.s.shiftByte(Stepper.shifter_outputs)
-
-        # update shared angle
-        with self.angle.get_lock():
-            self.angle.value += dir / Stepper.steps_per_degree
-            self.angle.value %= 360
+        self.angle.value += dir/Stepper.steps_per_degree
+        self.angle.value %= 360         # limit to [0,359.9+] range
 
     # Move relative angle from current position:
     def __rotate(self, delta):
