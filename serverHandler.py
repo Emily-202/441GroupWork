@@ -2,10 +2,12 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 import urllib.parse, json
 
 
-
+## Position Values -------------------------------------------------------------------
 bedRotation = {'A':0}
 laserRotation = {'B':0}
 
+
+## Generate HTML Code ----------------------------------------------------------------
 def generateOneHTML():
     html = f"""
         <html>
@@ -76,3 +78,58 @@ def generateOneHTML():
         </html>
         """
     return html.encode("utf-8")
+
+## HTTP Request Handler ----------------------------------------------------------------
+class StepperHandler(BaseHTTPRequestHandler):
+
+    def do_GET(self):
+        self.send_response(200)
+        self.send_header("Content-type", "text/html")
+        self.end_headers()
+        self.wfile.write(generateOneHTML())
+
+    def do_POST(self):
+        content_length = int(self.headers['Content-Length'])
+        body = self.rfile.read(content_length).decode()
+        params = urllib.parse.parse_qs(body)
+
+        for key in params:
+            try:
+                value = int(params[key][0])
+            except:
+                self._send_json({"success": False, "message": "Invalid number format"})
+                return
+
+            # Validate input range
+            if value < -180 or value > 180:
+                self._send_json({"success": False, "message": f"{key} must be between -180 and 180"})
+                return
+
+            # Save and call motor functions
+            if key == "bedRotation":
+                bedRotation['A'] = value
+                self.move_bed_stepper(value)
+            elif key == "laserRotation":
+                laserRotation['B'] = value
+                self.move_laser_stepper(value)
+
+        self._send_json({"success": True})
+
+    # ===== MOTOR CONTROL PLACEHOLDERS =====
+    def move_bed_stepper(self, value):
+        # enter working code here
+        print(f"Moving bed axis to {value}")
+
+    def move_laser_stepper(self, value):
+        # enter working code here
+        print(f"Moving laser axis to {value}")
+
+    # ===== JSON RESPONSE HELPER =====
+    def _send_json(self, obj):
+        response = json.dumps(obj).encode()
+        self.send_response(200)
+        self.send_header("Content-Type", "application/json")
+        self.end_headers()
+        self.wfile.write(response)
+
+
