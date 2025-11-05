@@ -13,8 +13,10 @@ def generateOneHTML():
         <body style="font-family: Arial; margin: 30px;">
 
         <h2> Stepper Axis Control </h2>
-        <p> Use the input fields below to set the desired positions for each axis.</p>
-        <p> Click the buttons to move the axes (in degrees) or zero their positions.</p>
+        <p> Use the input fields below to set the desired positions for each axis. <br>
+            Click the buttons to move the axes (in degrees) or zero their positions.</p>
+
+            <br>
 
             <form action="/" method="POST">
                 <p>
@@ -64,9 +66,10 @@ def generateOneHTML():
                     document.getElementById('bedRotation').value = 0;
                     document.getElementById('laserRotation').value = 0;
 
-                    // Send values to server without triggering validation alerts
-                    sendValue("bedRotation", 0);
-                    sendValue("laserRotation", 0);
+                    Promise.all([
+                        sendValue("bedRotation", 0),
+                        sendValue("laserRotation", 0)
+                    ]).then(() => alert("Axes reset to zero ✅"));
                 }}
             </script>
         </body>
