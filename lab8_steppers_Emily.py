@@ -9,7 +9,7 @@
 import time
 import multiprocessing
 from shifter import Shifter   # our custom Shifter class
-
+import math
 class Stepper:
     """
     Supports operation of an arbitrary number of stepper motors using
@@ -101,8 +101,18 @@ class Stepper:
 
         p = multiprocessing.Process(target=self.__rotate, args=(delta,))
         p.start()
-         
-
+    #moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero     
+    def goAngleXZ(self, targetAngle,selfPosAngle):
+        alpha=.5*(2*math.pi-abs(targetAngle-selfPosAngle))
+        if (xyAngle-selfPosAngle <0):
+            alpha=-alpha
+        self.goAngle(alpha)
+   #moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to th ecenter and zero and circle radius our own height and target height     
+    def goAngleY(self, targetAngle, selfPosAngle, selfHeight, radius,targetHeight):
+        C=math.sqrt((2*radius^2)-(2*radius^2)*math.cos(targetAngle-selfPosAngle))
+        phi=math.atan((targtHeight-selfHeight)/C)
+        self.goAngle(phi)
+    
     # Set the motor zero point
     def zero(self):
         with self.angle.get_lock():
