@@ -37,46 +37,48 @@ def generateHTML():
             </form>
 
             <script>
-                function sendValue(axis, value) {{
-                    return fetch('/', {{
-                        method: 'POST',
-                        headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
-                        body: axis + '=' + value
-                    }}).then(res => res.json());
-                }}
+                async function sendValue(axis, value) {
+                    const body = new URLSearchParams();
+                    body.append(axis, value);
 
-                function moveMotors() {{
+                    const response = await fetch('/', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        body: body
+                    });
+
+                    return response.json();
+                }
+
+                function moveMotors() {
                     let bed = parseInt(document.getElementById('bedRotation').value);
                     let laser = parseInt(document.getElementById('laserRotation').value);
 
-                    if (isNaN(bed) || bed < -180 || bed > 180) {{
+                    if (isNaN(bed) || bed < -180 || bed > 180) {
                         alert("Bed value must be between -180 and 180.");
                         return;
-                    }}
-                    if (isNaN(laser) || laser < -180 || laser > 180) {{
+                    }
+                    if (isNaN(laser) || laser < -180 || laser > 180) {
                         alert("Laser value must be between -180 and 180.");
                         return;
-                    }}
+                    }
 
-                    sendValue("bedRotation", bed).then(resp => {{
-                        if (!resp.success) alert(resp.message);
-                    }});
-                    sendValue("laserRotation", laser).then(resp => {{
-                        if (!resp.success) alert(resp.message);
-                    }});
-                }}
+                    sendValue("bedRotation", bed);
+                    sendValue("laserRotation", laser);
+                }
 
-                function zeroMotors() {{
-                    // Update webpage values instantly
+                function zeroMotors() {
+                    // visually zero out the fields
                     document.getElementById('bedRotation').value = 0;
                     document.getElementById('laserRotation').value = 0;
 
-                    Promise.all([
-                        sendValue("bedRotation", 0),
-                        sendValue("laserRotation", 0)
-                    ]).then(() => alert("Axes reset to zero ✅"));
-                }}
-            </script>
+                    // send both values to server
+                    sendValue("bedRotation", 0);
+                    sendValue("laserRotation", 0);
+                }
+                </script>
+
+
         </body>
         </html>
         """
@@ -110,6 +112,8 @@ class StepperHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length).decode()
         params = urllib.parse.parse_qs(body)
+
+        print("Received POST data:", params)
 
         for key in params:
             try:
