@@ -45,7 +45,7 @@ def generateHTML():
 
                 const response = await fetch('/', {{
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
                     body: body
                 }});
 
@@ -75,15 +75,13 @@ def generateHTML():
             }}
 
             function zeroMotors() {{
-                // visually zero out fields
                 document.getElementById('bedRotation').value = 0;
                 document.getElementById('laserRotation').value = 0;
 
-                // send both values to server (mark as zero reset)
                 sendValue("bedRotation", 0, true);
                 sendValue("laserRotation", 0, true);
             }}
-            </script>
+        </script>
 
     </body>
     </html>
