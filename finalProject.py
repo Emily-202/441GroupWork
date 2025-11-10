@@ -38,28 +38,26 @@ def generateHTML():
         </div>
 
         <script>
-            async function sendValue(axis, value) {{
+            async function sendValue(axis, value, isZero=false) {{
+                const body = new URLSearchParams();
+                body.append(axis, value);
+                if (isZero) body.append("zero", "true");
+
+                const response = await fetch('/', {{
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: body
+                }});
+
                 try {{
-                    const body = new URLSearchParams();
-                    body.append(axis, value);
-
-                    const response = await fetch('/', {{
-                        method: 'POST',
-                        headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
-                        body: body.toString()
-                    }});
-
-                    const data = await response.json();
-                    console.log('Server response for', axis, ':', data);
-                    return data;
-                }} catch (err) {{
-                    console.error('Fetch error for', axis, err);
-                    alert('Network error: could not contact server.');
-                    return {{success: false, message: 'fetch error'}};
+                    const result = await response.json();
+                    console.log(result);
+                }} catch (e) {{
+                    console.error("Non-JSON response");
                 }}
             }}
 
-            async function moveMotors() {{
+            function moveMotors() {{
                 let bed = parseInt(document.getElementById('bedRotation').value);
                 let laser = parseInt(document.getElementById('laserRotation').value);
 
@@ -72,25 +70,20 @@ def generateHTML():
                     return;
                 }}
 
-                // send one after another and log results
-                await sendValue("bedRotation", bed);
-                await sendValue("laserRotation", laser);
+                sendValue("bedRotation", bed);
+                sendValue("laserRotation", laser);
             }}
 
-            async function zeroMotors() {{
-                // visually zero out the fields first
+            function zeroMotors() {{
+                // visually zero out fields
                 document.getElementById('bedRotation').value = 0;
                 document.getElementById('laserRotation').value = 0;
 
-                // send both zeros
-                await sendValue("bedRotation", 0);
-                await sendValue("laserRotation", 0);
+                // send both values to server (mark as zero reset)
+                sendValue("bedRotation", 0, true);
+                sendValue("laserRotation", 0, true);
             }}
-
-            // helpful: show startup values in console
-            console.log('page loaded, bed=', document.getElementById('bedRotation').value,
-                        'laser=', document.getElementById('laserRotation').value);
-        </script>
+            </script>
 
     </body>
     </html>
