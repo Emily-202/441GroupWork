@@ -9,9 +9,13 @@ import time
 ## Position Values -------------------------------------------------------------------
 bedRotation = {'A':0}
 laserRotation = {'B':0}
+laserState = {"on": False}
 
 ## Generate HTML Code ----------------------------------------------------------------
 def generateHTML():
+    laser_color = "green" if laserState["on"] else "red"
+    laser_text = "ON" if laserState["on"] else "OFF"
+
     html = f"""
     <html>
     <head><title>Stepper Control</title></head>
@@ -23,7 +27,6 @@ def generateHTML():
 
         <br>
 
-        <!-- removed form action to avoid accidental full-post submits -->
         <div>
             <p>
                 <label for="bedRotation">Bed Position [-180 and 180]:</label>
@@ -36,6 +39,16 @@ def generateHTML():
             <input type="button" value="Move" onclick="moveMotors();">
             <input type="button" value="Zero Positions" onclick="zeroMotors();">
         </div>
+
+        <hr>
+
+        <h3>Laser Control</h3>
+        <div id="laserIndicator"
+            style="width:40px; height:40px; border-radius:50%; background:{laser_color};
+                    display:inline-block; vertical-align:middle; margin-right:10px;"></div>
+        <span id="laserStatus" style="font-weight:bold;">Laser is {laser_text}</span>
+        <br><br>
+        <input type="button" id="laserButton" value="Toggle Laser" onclick="toggleLaser();">
 
         <script>
             async function sendValue(axis, value, isZero=false) {{
@@ -80,6 +93,27 @@ def generateHTML():
 
                 sendValue("bedRotation", 0, true);
                 sendValue("laserRotation", 0, true);
+            }}
+
+            async function toggleLaser() {{
+                const response = await fetch('/toggleLaser', {{
+                    method: 'POST'
+                }});
+                const result = await response.json();
+                console.log(result);
+                updateLaserIndicator(result.on);
+            }}
+
+            function updateLaserIndicator(isOn) {{
+                const indicator = document.getElementById('laserIndicator');
+                const status = document.getElementById('laserStatus');
+                if (isOn) {{
+                    indicator.style.background = 'green';
+                    status.textContent = 'Laser is ON';
+                }} else {{
+                    indicator.style.background = 'red';
+                    status.textContent = 'Laser is OFF';
+                }}
             }}
         </script>
 
