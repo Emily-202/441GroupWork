@@ -133,3 +133,6 @@ class StepperHandler(BaseHTTPRequestHandler):
         self.wfile.write(response)
 
 
+## Run Code ----------------------------------------------------------------
+if __name__ == "__main__":
+    StepperHandler.runServer()
