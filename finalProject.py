@@ -9,6 +9,7 @@ from shifter import Shifter
 bedRotation = {'A':0}
 laserRotation = {'B':0}
 
+## Stepper Class ---------------------------------------------------------------------
 class Stepper:
     """
     Supports operation of an arbitrary number of stepper motors using
