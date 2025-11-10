@@ -122,7 +122,12 @@ class StepperHandler(BaseHTTPRequestHandler):
 
         print("Received POST data:", params)
 
+        is_zero = "zero" in params  # detect zero reset command
+
         for key in params:
+            if key == "zero":
+                continue  # skip the flag itself
+
             try:
                 value = int(params[key][0])
             except:
@@ -134,15 +139,23 @@ class StepperHandler(BaseHTTPRequestHandler):
                 self._send_json({"success": False, "message": f"{key} must be between -180 and 180"})
                 return
 
-            # Save and call motor functions
+            # Save and call motor functions (only if not zeroing)
             if key == "bedRotation":
                 bedRotation['A'] = value
-                self.move_bed_stepper(value)
+                if not is_zero:
+                    self.move_bed_stepper(value)
+                else:
+                    print("Zeroing bed axis reference (no motion).")
+
             elif key == "laserRotation":
                 laserRotation['B'] = value
-                self.move_laser_stepper(value)
+                if not is_zero:
+                    self.move_laser_stepper(value)
+                else:
+                    print("Zeroing laser axis reference (no motion).")
 
         self._send_json({"success": True})
+
 
     # ===== MOTOR CONTROL PLACEHOLDERS =====
     def move_bed_stepper(self, value):
