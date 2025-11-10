@@ -148,13 +148,20 @@ class StepperHandler(BaseHTTPRequestHandler):
         self.wfile.write(generateHTML())
 
     def do_POST(self):
+        if self.path == "/toggleLaser":
+            laserState["on"] = not laserState["on"]
+            print(f"Laser toggled {'ON' if laserState['on'] else 'OFF'}")
+            # TODO: Add GPIO or relay control for actual laser here
+            self._send_json({"success": True, "on": laserState["on"]})
+            return
+
+        # otherwise handle normal axis control as before
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length).decode()
         params = urllib.parse.parse_qs(body)
 
         print("Received POST data:", params)
-
-        is_zero = "zero" in params  # detect zero reset command
+        is_zero = "zero" in params
 
         for key in params:
             if key == "zero":
