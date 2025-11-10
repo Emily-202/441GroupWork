@@ -8,7 +8,7 @@ laserRotation = {'B':0}
 
 
 ## Generate HTML Code ----------------------------------------------------------------
-def generateOneHTML():
+def generateHTML():
     html = f"""
         <html>
         <head><title>Stepper Control</title></head>
@@ -79,6 +79,19 @@ def generateOneHTML():
         """
     return html.encode("utf-8")
 
+## Run Server Command ------------------------------------------------------------------
+def runServer():
+    server_address = ("0.0.0.0", 8080)
+    httpd = HTTPServer(server_address, StepperHandler)
+    print("Server running on http://localhost:8080 (Press Ctrl+C to stop)")
+
+    try:
+        httpd.serve_forever()
+    except KeyboardInterrupt:
+        print("\nShutting down server...")
+        httpd.server_close()
+        print("Server stopped cleanly.")
+
 ## HTTP Request Handler ----------------------------------------------------------------
 class StepperHandler(BaseHTTPRequestHandler):
 
@@ -86,7 +99,7 @@ class StepperHandler(BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header("Content-type", "text/html")
         self.end_headers()
-        self.wfile.write(generateOneHTML())
+        self.wfile.write(generateHTML())
 
     def do_POST(self):
         content_length = int(self.headers['Content-Length'])
@@ -135,4 +148,4 @@ class StepperHandler(BaseHTTPRequestHandler):
 
 ## Run Code ----------------------------------------------------------------
 if __name__ == "__main__":
-    StepperHandler.runServer()
+    runServer()
