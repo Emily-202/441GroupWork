@@ -13,75 +13,90 @@ laserRotation = {'B':0}
 ## Generate HTML Code ----------------------------------------------------------------
 def generateHTML():
     html = f"""
-        <html>
-        <head><title>Stepper Control</title></head>
-        <body style="font-family: Arial; margin: 30px;">
+    <html>
+    <head><title>Stepper Control</title></head>
+    <body style="font-family: Arial; margin: 30px;">
 
-        <h2> Stepper Axis Control </h2>
-        <p> Use the input fields below to set the desired positions for each axis. <br>
-            Click the buttons to move the axes (in degrees) or zero their positions.</p>
+    <h2> Stepper Axis Control </h2>
+    <p> Use the input fields below to set the desired positions for each axis. <br>
+        Click the buttons to move the axes (in degrees) or zero their positions.</p>
 
-            <br>
+        <br>
 
-            <form action="/" method="POST">
-                <p>
-                    <label for="bedRotation">Bed Position [-180 and 180]:</label>
-                    <input type="number" id="bedRotation" min="-180" max="180" value="{bedRotation['A']}"><br><br>
-                </p>
-                <p>
-                    <label for="laserRotation">Laser Position [-180 and 180]:</label>
-                    <input type="number" id="laserRotation" min="-180" max="180" value="{laserRotation['B']}"><br><br>
-                </p>
-                <input type="button" value="Move" onclick="updatePosition('bedRotation', document.getElementById('bedRotation').value); updatePosition('laserRotation', document.getElementById('laserRotation').value);">
-                <input type="button" value="Zero Positions" onclick="updatePosition('bedRotation', 0); updatePosition('laserRotation', 0);">
-            </form>
+        <!-- removed form action to avoid accidental full-post submits -->
+        <div>
+            <p>
+                <label for="bedRotation">Bed Position [-180 and 180]:</label>
+                <input type="number" id="bedRotation" min="-180" max="180" value="{bedRotation['A']}"><br><br>
+            </p>
+            <p>
+                <label for="laserRotation">Laser Position [-180 and 180]:</label>
+                <input type="number" id="laserRotation" min="-180" max="180" value="{laserRotation['B']}"><br><br>
+            </p>
+            <input type="button" value="Move" onclick="moveMotors();">
+            <input type="button" value="Zero Positions" onclick="zeroMotors();">
+        </div>
 
-            <script>
-                async function sendValue(axis, value) {{
+        <script>
+            async function sendValue(axis, value) {{
+                try {{
                     const body = new URLSearchParams();
                     body.append(axis, value);
 
                     const response = await fetch('/', {{
                         method: 'POST',
                         headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
-                        body: body
+                        body: body.toString()
                     }});
 
-                    return response.json();
+                    const data = await response.json();
+                    console.log('Server response for', axis, ':', data);
+                    return data;
+                }} catch (err) {{
+                    console.error('Fetch error for', axis, err);
+                    alert('Network error: could not contact server.');
+                    return {{success: false, message: 'fetch error'}};
+                }}
+            }}
+
+            async function moveMotors() {{
+                let bed = parseInt(document.getElementById('bedRotation').value);
+                let laser = parseInt(document.getElementById('laserRotation').value);
+
+                if (isNaN(bed) || bed < -180 || bed > 180) {{
+                    alert("Bed value must be between -180 and 180.");
+                    return;
+                }}
+                if (isNaN(laser) || laser < -180 || laser > 180) {{
+                    alert("Laser value must be between -180 and 180.");
+                    return;
                 }}
 
-                function moveMotors() {{
-                    let bed = parseInt(document.getElementById('bedRotation').value);
-                    let laser = parseInt(document.getElementById('laserRotation').value);
+                // send one after another and log results
+                await sendValue("bedRotation", bed);
+                await sendValue("laserRotation", laser);
+            }}
 
-                    if (isNaN(bed) || bed < -180 || bed > 180) {{
-                        alert("Bed value must be between -180 and 180.");
-                        return;
-                    }}
-                    if (isNaN(laser) || laser < -180 || laser > 180) {{
-                        alert("Laser value must be between -180 and 180.");
-                        return;
-                    }}
+            async function zeroMotors() {{
+                // visually zero out the fields first
+                document.getElementById('bedRotation').value = 0;
+                document.getElementById('laserRotation').value = 0;
 
-                    sendValue("bedRotation", bed);
-                    sendValue("laserRotation", laser);
-                }}
+                // send both zeros
+                await sendValue("bedRotation", 0);
+                await sendValue("laserRotation", 0);
+            }}
 
-                function zeroMotors() {{
-                    // visually zero out the fields
-                    document.getElementById('bedRotation').value = 0;
-                    document.getElementById('laserRotation').value = 0;
+            // helpful: show startup values in console
+            console.log('page loaded, bed=', document.getElementById('bedRotation').value,
+                        'laser=', document.getElementById('laserRotation').value);
+        </script>
 
-                    // send both values to server
-                    sendValue("bedRotation", 0);
-                    sendValue("laserRotation", 0);
-                }}
-                </script>
-
-        </body>
-        </html>
-        """
+    </body>
+    </html>
+    """
     return html.encode("utf-8")
+
 
 
 ## Run Server Command ------------------------------------------------------------------
