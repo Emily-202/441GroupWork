@@ -37,37 +37,37 @@ def generateHTML():
             </form>
 
             <script>
-                async function sendValue(axis, value) {
+                async function sendValue(axis, value) {{
                     const body = new URLSearchParams();
                     body.append(axis, value);
 
-                    const response = await fetch('/', {
+                    const response = await fetch('/', {{
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                        headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
                         body: body
-                    });
+                    }});
 
                     return response.json();
-                }
+                }}
 
-                function moveMotors() {
+                function moveMotors() {{
                     let bed = parseInt(document.getElementById('bedRotation').value);
                     let laser = parseInt(document.getElementById('laserRotation').value);
 
-                    if (isNaN(bed) || bed < -180 || bed > 180) {
+                    if (isNaN(bed) || bed < -180 || bed > 180) {{
                         alert("Bed value must be between -180 and 180.");
                         return;
-                    }
-                    if (isNaN(laser) || laser < -180 || laser > 180) {
+                    }}
+                    if (isNaN(laser) || laser < -180 || laser > 180) {{
                         alert("Laser value must be between -180 and 180.");
                         return;
-                    }
+                    }}
 
                     sendValue("bedRotation", bed);
                     sendValue("laserRotation", laser);
-                }
+                }}
 
-                function zeroMotors() {
+                function zeroMotors() {{
                     // visually zero out the fields
                     document.getElementById('bedRotation').value = 0;
                     document.getElementById('laserRotation').value = 0;
@@ -75,9 +75,8 @@ def generateHTML():
                     // send both values to server
                     sendValue("bedRotation", 0);
                     sendValue("laserRotation", 0);
-                }
+                }}
                 </script>
-
 
         </body>
         </html>
