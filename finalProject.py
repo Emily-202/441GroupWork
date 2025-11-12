@@ -6,6 +6,22 @@ from shifter import Shifter
 import time
 import json
 
+
+## Find JSON File --------------------------------------------------------------------
+def load_target_data(filename="targets.json"):
+    """Return parsed JSON (dict) from targets.json or {} if missing."""
+    try:
+        with open(filename, "r") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        print("Warning: targets.json not found.")
+        return {}
+    except Exception as e:
+        print("Error loading targets.json:", e)
+        return {}
+
+
+## Get Theta and Z Values from JSON --------------------------------------------------
 def extract_theta_z(data_text):
     """
     Parse JSON text containing turrets and globes and return a dictionary
@@ -70,6 +86,13 @@ def generateHTML():
         <span id="laserStatus" style="font-weight:bold;">Laser is {laser_text}</span>
         <br><br>
         <input type="button" id="laserButton" value="Toggle Laser" onclick="toggleLaser();">
+
+
+        <h3>Select Target</h3>
+            <select id="targetSelector" onchange="selectTarget()">
+                <option value="">-- Choose a target --</option>
+            </select>
+
 
         <script>
             async function sendValue(axis, value, isZero=false) {{
@@ -136,6 +159,79 @@ def generateHTML():
                     status.textContent = 'Laser is OFF';
                 }}
             }}
+
+            async function loadTargets() {{
+                const resp = await fetch('/targets');
+                const data = await resp.json();
+                const selector = document.getElementById('targetSelector');
+
+                // Turrets group
+                if (data.turrets) {{
+                    const groupTurrets = document.createElement('optgroup');
+                    groupTurrets.label = "Turrets";
+                    for (const [id, vals] of Object.entries(data.turrets)) {{
+                        const option = document.createElement('option');
+                        option.value = `turret_${{id}}`;
+                        option.textContent = `Turret ${{id}} → θ=${{(vals.theta||0).toFixed(3)}} rad, r=${{(vals.r||0).toFixed(1)}}`;
+                        groupTurrets.appendChild(option);
+                    }}
+                    selector.appendChild(groupTurrets);
+                }}
+
+                // Globes group
+                if (data.globes) {{
+                    const groupGlobes = document.createElement('optgroup');
+                    groupGlobes.label = "Globes";
+                    data.globes.forEach((g, i) => {{
+                        const option = document.createElement('option');
+                        option.value = `globe_${{i+1}}`;
+                        option.textContent = `Globe ${{i+1}} → θ=${{(g.theta||0).toFixed(3)}} rad, z=${{(g.z||0).toFixed(1)}}, r=${{(g.r||0).toFixed(1)}}`;
+                        groupGlobes.appendChild(option);
+                    }});
+                    selector.appendChild(groupGlobes);
+                }}
+            }}
+
+            async function selectTarget() {{
+                const selected = document.getElementById('targetSelector').value;
+                if (!selected) {{
+                    document.getElementById('targetDetails').textContent = "";
+                    return;
+                }}
+
+                const res = await fetch('/selectTarget', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
+                    body: 'target=' + encodeURIComponent(selected)
+                }});
+
+                // server returns plain text describing the chosen target
+                const text = await res.text();
+                document.getElementById('targetDetails').textContent = text;
+
+                // OPTIONAL: also update the input fields so user can press Move immediately
+                // The server also returns JSON if you prefer — but to keep it simple we parse text.
+                // If you want the fields automatically updated from the client-side, you can
+                // instead fetch /targets and apply the theta locally (below is a client-side way):
+
+                // client-side update (no extra server roundtrip):
+                const targetsResp = await fetch('/targets');
+                const targets = await targetsResp.json();
+                if (selected.startsWith('turret_')) {{
+                    const tid = selected.split('_')[1];
+                    const theta = targets.turrets[tid].theta;
+                    document.getElementById('bedRotation').value = (theta * 180 / Math.PI).toFixed(2);
+                    // laserRotation left unchanged
+                }} else if (selected.startsWith('globe_')) {{
+                    const gid = parseInt(selected.split('_')[1], 10) - 1;
+                    const g = targets.globes[gid];
+                    document.getElementById('bedRotation').value = (g.theta * 180 / Math.PI).toFixed(2);
+                    // if you want z → update another field, add it here
+                }}
+            }}
+
+            // load on startup
+            loadTargets();
         </script>
 
     </body>
@@ -163,10 +259,19 @@ def runServer():
 class StepperHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
-        self.send_response(200)
-        self.send_header("Content-type", "text/html")
-        self.end_headers()
-        self.wfile.write(generateHTML())
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header("Content-type", "text/html")
+            self.end_headers()
+            self.wfile.write(generateHTML())
+        elif self.path == '/targets':
+            self.send_response(200)
+            self.send_header("Content-type", "application/json")
+            self.end_headers()
+            targets = load_target_data()
+            self.wfile.write(json.dumps(targets).encode('utf-8'))
+        else:
+            self.send_error(404)
 
     def do_POST(self):
         if self.path == "/toggleLaser":
@@ -176,10 +281,45 @@ class StepperHandler(BaseHTTPRequestHandler):
             self._send_json({"success": True, "on": laserState["on"]})
             return
 
+        if self.path == "/selectTarget":
+            # read posted target name
+            length = int(self.headers.get('Content-Length', 0))
+            body = self.rfile.read(length).decode('utf-8')
+            parsed = urllib.parse.parse_qs(body)
+            target_name = parsed.get('target', [''])[0]
+
+            data = load_target_data()
+            if target_name.startswith('turret_'):
+                tid = target_name.split('_')[1]
+                t = data.get('turrets', {}).get(tid)
+                if t:
+                    # respond with a descriptive text
+                    msg = f"Turret {tid}: r={t.get('r')}, theta={t.get('theta')}"
+                else:
+                    msg = "Turret not found."
+            elif target_name.startswith('globe_'):
+                gid = int(target_name.split('_')[1]) - 1
+                try:
+                    g = data.get('globes', [])[gid]
+                    msg = f"Globe {gid+1}: r={g.get('r')}, theta={g.get('theta')}, z={g.get('z')}"
+                except Exception:
+                    msg = "Globe not found."
+            else:
+                msg = "Unknown target."
+
+            print("Selected target:", msg)
+            # reply with plain text (client reads it)
+            self.send_response(200)
+            self.send_header("Content-Type", "text/plain")
+            self.end_headers()
+            self.wfile.write(msg.encode('utf-8'))
+            return
+
         # otherwise handle normal axis control as before
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length).decode()
         params = urllib.parse.parse_qs(body)
+        
 
         print("Received POST data:", params)
         is_zero = "zero" in params
