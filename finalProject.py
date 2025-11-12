@@ -4,7 +4,28 @@ import urllib.parse, json
 import multiprocessing
 from shifter import Shifter
 import time
+import json
 
+def extract_theta_z(data_text):
+    """
+    Parse JSON text containing turrets and globes and return a dictionary
+    with key-value pairs of theta and z (if available) for all items.
+    """
+    # Convert the JSON text to a Python dictionary
+    data = json.loads(data_text)
+
+    result = {}
+
+    # Extract theta for all turrets
+    for turret_id, turret_data in data.get("turrets", {}).items():
+        result[f"turret_{turret_id}_theta"] = turret_data.get("theta")
+
+    # Extract theta and z for all globes
+    for i, globe_data in enumerate(data.get("globes", []), start=1):
+        result[f"globe_{i}_theta"] = globe_data.get("theta")
+        result[f"globe_{i}_z"] = globe_data.get("z")
+
+    return result
 
 ## Position Values -------------------------------------------------------------------
 bedRotation = {'A':0}
