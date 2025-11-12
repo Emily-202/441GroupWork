@@ -55,7 +55,10 @@ def generateHTML():
 
     html = f"""
     <html>
-    <head><title>Stepper Control</title></head>
+    <head>
+        <title>Stepper Control</title>
+        <meta charset="UTF-8">
+    </head>
     <body style="font-family: Arial; margin: 30px;">
 
     <h2> Stepper Axis Control </h2>
@@ -92,6 +95,8 @@ def generateHTML():
             <select id="targetSelector" onchange="selectTarget()">
                 <option value="">-- Choose a target --</option>
             </select>
+        <br><br>
+        <input type="button" id="moveTargetButton" value="Move to Target" onclick="moveToTarget();">
 
 
         <script>
@@ -160,6 +165,49 @@ def generateHTML():
                 }}
             }}
 
+            async function moveToTarget() {{
+                const selected = document.getElementById('targetSelector').value;
+                if (!selected) {{
+                    alert("Please select a target first.");
+                    return;
+                }}
+
+                const data = await (await fetch('/targets')).json();
+
+                let bedDeg = 0;
+                let laserDeg = 0;
+
+                // Determine the target's coordinates
+                if (selected.startsWith('turret_')) {{
+                    const id = selected.split('_')[1];
+                    const vals = data.turrets[id];
+                    if (!vals) {{
+                        alert("Invalid turret data.");
+                        return;
+                    }}
+                    bedDeg = (vals.theta * 180 / Math.PI).toFixed(1);
+                    laserDeg = 0;
+                }} 
+                else if (selected.startsWith('globe_')) {{
+                    const id = parseInt(selected.split('_')[1]) - 1;
+                    const vals = data.globes[id];
+                    if (!vals) {{
+                        alert("Invalid globe data.");
+                        return;
+                    }}
+                    bedDeg = (vals.theta * 180 / Math.PI).toFixed(1);
+                    laserDeg = (vals.z).toFixed(1);
+                }}
+
+                console.log(`Moving to target: Bed=${{bedDeg}}°, Laser=${{laserDeg}}°`);
+
+                // Send commands to the backend to move motors
+                await sendValue("bedRotation", bedDeg);
+                await sendValue("laserRotation", laserDeg);
+
+                alert(`Moving to target: Bed=${{bedDeg}}°, Laser=${{laserDeg}}°`);
+            }}
+
             async function loadTargets() {{
                 const resp = await fetch('/targets');
                 const data = await resp.json();
@@ -172,7 +220,7 @@ def generateHTML():
                     for (const [id, vals] of Object.entries(data.turrets)) {{
                         const option = document.createElement('option');
                         option.value = `turret_${{id}}`;
-                        option.textContent = `Turret ${{id}} → θ=${{(vals.theta||0).toFixed(3)}} rad, r=${{(vals.r||0).toFixed(1)}}`;
+                        option.textContent = `Turret ${{id}} -> θ=${{(vals.theta||0).toFixed(3)}} rad, r=${{(vals.r||0).toFixed(1)}}`;
                         groupTurrets.appendChild(option);
                     }}
                     selector.appendChild(groupTurrets);
@@ -185,7 +233,7 @@ def generateHTML():
                     data.globes.forEach((g, i) => {{
                         const option = document.createElement('option');
                         option.value = `globe_${{i+1}}`;
-                        option.textContent = `Globe ${{i+1}} → θ=${{(g.theta||0).toFixed(3)}} rad, z=${{(g.z||0).toFixed(1)}}, r=${{(g.r||0).toFixed(1)}}`;
+                        option.textContent = `Globe ${{i+1}} -> θ=${{(g.theta||0).toFixed(3)}} rad, z=${{(g.z||0).toFixed(1)}}, r=${{(g.r||0).toFixed(1)}}`;
                         groupGlobes.appendChild(option);
                     }});
                     selector.appendChild(groupGlobes);
