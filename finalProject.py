@@ -58,6 +58,9 @@ def generateHTML():
     <head>
         <title>Stepper Control</title>
         <meta charset="UTF-8">
+        <style>
+            / add formatting this way /
+        </style>
     </head>
     <body style="font-family: Arial; margin: 30px;">
 
