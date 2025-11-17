@@ -59,231 +59,207 @@ def generateHTML():
         <title>Stepper Control</title>
         <meta charset="UTF-8">
         <style>
-            / add formatting this way /
+            #leftPanel {{
+                width: 55%;
+            }}
+            #rightPanel {{
+                width: 40%;
+                border: 2px solid #333;
+                border-radius: 10px;
+                padding: 20px;
+                background-color: #f0f0f0;
+                height: fit-content;
+            }}
+            #orientationBox {{
+                font-size: 18px;
+                line-height: 1.6em;
+            }}
+            h3 {{
+                margin-top: 10px;
+            }}
         </style>
     </head>
     <body style="font-family: Arial; margin: 30px;">
 
-    <h2> Stepper Axis Control </h2>
-    <p> Use the input fields below to set the desired positions for each axis. <br>
-        Click the buttons to move the axes (in degrees) or zero their positions.</p>
+    <!-- LEFT SIDE (controls) -->
+        <div id="leftPanel">
+        <h2> Stepper Axis Control </h2>
+        <p> Use the input fields below to set the desired positions for each axis. <br>
+            Click the buttons to move the axes (in degrees) or zero their positions.</p>
 
-        <br>
+            <br>
 
-        <div>
-            <p>
-                <label for="bedRotation">Bed Position [-180 and 180]:</label>
-                <input type="number" id="bedRotation" min="-180" max="180" value="{bedRotation['A']}"><br><br>
-            </p>
-            <p>
-                <label for="laserRotation">Laser Position [-180 and 180]:</label>
-                <input type="number" id="laserRotation" min="-180" max="180" value="{laserRotation['B']}"><br><br>
-            </p>
-            <input type="button" value="Move" onclick="moveMotors();">
-            <input type="button" value="Zero Positions" onclick="zeroMotors();">
+            <div>
+                <p>
+                    <label for="bedRotation">Bed Position [-180 and 180]:</label>
+                    <input type="number" id="bedRotation" min="-180" max="180" value="{bedRotation['A']}"><br><br>
+                </p>
+                <p>
+                    <label for="laserRotation">Laser Position [-180 and 180]:</label>
+                    <input type="number" id="laserRotation" min="-180" max="180" value="{laserRotation['B']}"><br><br>
+                </p>
+                <input type="button" value="Move" onclick="moveMotors();">
+                <input type="button" value="Zero Positions" onclick="zeroMotors();">
+            </div>
+
+            <hr>
+
+            <h3>Laser Control</h3>
+            <div id="laserIndicator"
+                style="width:40px; height:40px; border-radius:50%; background:{laser_color};
+                        display:inline-block; vertical-align:middle; margin-right:10px;"></div>
+            <span id="laserStatus" style="font-weight:bold;">Laser is {laser_text}</span>
+            <br><br>
+            <input type="button" id="laserButton" value="Toggle Laser" onclick="toggleLaser();">
+
+
+            <h3>Select Target</h3>
+                <select id="targetSelector" onchange="selectTarget()">
+                    <option value="">-- Choose a target --</option>
+                </select>
+            <br><br>
+            <input type="button" id="moveTargetButton" value="Move to Target" onclick="moveToTarget();">
         </div>
 
-        <hr>
-
-        <h3>Laser Control</h3>
-        <div id="laserIndicator"
-            style="width:40px; height:40px; border-radius:50%; background:{laser_color};
-                    display:inline-block; vertical-align:middle; margin-right:10px;"></div>
-        <span id="laserStatus" style="font-weight:bold;">Laser is {laser_text}</span>
-        <br><br>
-        <input type="button" id="laserButton" value="Toggle Laser" onclick="toggleLaser();">
-
-
-        <h3>Select Target</h3>
-            <select id="targetSelector" onchange="selectTarget()">
-                <option value="">-- Choose a target --</option>
-            </select>
-        <br><br>
-        <input type="button" id="moveTargetButton" value="Move to Target" onclick="moveToTarget();">
+    <!-- RIGHT SIDE (orientation display) -->
+        <div id="rightPanel">
+            <h2>Robot Orientation</h2>
+            <div id="orientationBox">
+                <p><b>Bed Rotation:</b> <span id="bedAngleDisplay">{bedRotation['A']}</span>°</p>
+                <p><b>Laser Rotation:</b> <span id="laserAngleDisplay">{laserRotation['B']}</span>°</p>
+                <p><b>Laser Status:</b> <span id="laserStateDisplay" style="color:{laser_color}; font-weight:bold;">{laser_text}</span></p>
+            </div>
+        </div>
 
 
-        <script>
-            async function sendValue(axis, value, isZero=false) {{
-                const body = new URLSearchParams();
-                body.append(axis, value);
-                if (isZero) body.append("zero", "true");
+    <script>
+        function updateOrientationDisplay() {{
+            document.getElementById('bedAngleDisplay').textContent =
+                document.getElementById('bedRotation').value;
+            document.getElementById('laserAngleDisplay').textContent =
+                document.getElementById('laserRotation').value;
 
-                const response = await fetch('/', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
-                    body: body
+            const laserOn = document.getElementById('laserIndicator').style.background === 'green';
+            document.getElementById('laserStateDisplay').textContent = laserOn ? 'ON' : 'OFF';
+            document.getElementById('laserStateDisplay').style.color = laserOn ? 'green' : 'red';
+        }}
+
+        async function sendValue(axis, value, isZero=false) {{
+            const body = new URLSearchParams();
+            body.append(axis, value);
+            if (isZero) body.append("zero", "true");
+
+            const response = await fetch('/', {{
+                method: 'POST',
+                headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
+                body: body
+            }});
+            try {{
+                await response.json();
+            }} catch (e) {{
+                console.error("Non-JSON response");
+            }}
+            updateOrientationDisplay();
+        }}
+
+        function moveMotors() {{
+            let bed = parseInt(document.getElementById('bedRotation').value);
+            let laser = parseInt(document.getElementById('laserRotation').value);
+            if (isNaN(bed) || bed < -180 || bed > 180) return alert("Bed value must be between -180 and 180.");
+            if (isNaN(laser) || laser < -180 || laser > 180) return alert("Laser value must be between -180 and 180.");
+            sendValue("bedRotation", bed);
+            sendValue("laserRotation", laser);
+        }}
+
+        function zeroMotors() {{
+            document.getElementById('bedRotation').value = 0;
+            document.getElementById('laserRotation').value = 0;
+            sendValue("bedRotation", 0, true);
+            sendValue("laserRotation", 0, true);
+            updateOrientationDisplay();
+        }}
+
+        async function toggleLaser() {{
+            const response = await fetch('/toggleLaser', {{ method: 'POST' }});
+            const result = await response.json();
+            updateLaserIndicator(result.on);
+            updateOrientationDisplay();
+        }}
+
+        function updateLaserIndicator(isOn) {{
+            const indicator = document.getElementById('laserIndicator');
+            const status = document.getElementById('laserStatus');
+            if (isOn) {{
+                indicator.style.background = 'green';
+                status.textContent = 'Laser is ON';
+            }} else {{
+                indicator.style.background = 'red';
+                status.textContent = 'Laser is OFF';
+            }}
+        }}
+
+        async function moveToTarget() {{
+            const selected = document.getElementById('targetSelector').value;
+            if (!selected) return alert("Please select a target first.");
+
+            const data = await (await fetch('/targets')).json();
+            let bedDeg = 0, laserDeg = 0;
+
+            if (selected.startsWith('turret_')) {{
+                const id = selected.split('_')[1];
+                const vals = data.turrets[id];
+                if (!vals) return alert("Invalid turret data.");
+                bedDeg = (vals.theta * 180 / Math.PI).toFixed(1);
+                laserDeg = 0;
+            }} else if (selected.startsWith('globe_')) {{
+                const id = parseInt(selected.split('_')[1]) - 1;
+                const vals = data.globes[id];
+                if (!vals) return alert("Invalid globe data.");
+                bedDeg = (vals.theta * 180 / Math.PI).toFixed(1);
+                laserDeg = (vals.z).toFixed(1);
+            }}
+
+            document.getElementById('bedRotation').value = bedDeg;
+            document.getElementById('laserRotation').value = laserDeg;
+
+            await sendValue("bedRotation", bedDeg);
+            await sendValue("laserRotation", laserDeg);
+            updateOrientationDisplay();
+        }}
+
+        async function loadTargets() {{
+            const resp = await fetch('/targets');
+            const data = await resp.json();
+            const selector = document.getElementById('targetSelector');
+
+            if (data.turrets) {{
+                const groupTurrets = document.createElement('optgroup');
+                groupTurrets.label = "Turrets";
+                for (const [id, vals] of Object.entries(data.turrets)) {{
+                    const option = document.createElement('option');
+                    option.value = `turret_${{id}}`;
+                    option.textContent = `Turret ${{id}} -> θ=${{(vals.theta||0).toFixed(3)}} rad, r=${{(vals.r||0).toFixed(1)}}`;
+                    groupTurrets.appendChild(option);
+                }}
+                selector.appendChild(groupTurrets);
+            }}
+
+            if (data.globes) {{
+                const groupGlobes = document.createElement('optgroup');
+                groupGlobes.label = "Globes";
+                data.globes.forEach((g, i) => {{
+                    const option = document.createElement('option');
+                    option.value = `globe_${{i+1}}`;
+                    option.textContent = `Globe ${{i+1}} -> θ=${{(g.theta||0).toFixed(3)}} rad, z=${{(g.z||0).toFixed(1)}}, r=${{(g.r||0).toFixed(1)}}`;
+                    groupGlobes.appendChild(option);
                 }});
-
-                try {{
-                    const result = await response.json();
-                    console.log(result);
-                }} catch (e) {{
-                    console.error("Non-JSON response");
-                }}
+                selector.appendChild(groupGlobes);
             }}
+        }}
 
-            function moveMotors() {{
-                let bed = parseInt(document.getElementById('bedRotation').value);
-                let laser = parseInt(document.getElementById('laserRotation').value);
-
-                if (isNaN(bed) || bed < -180 || bed > 180) {{
-                    alert("Bed value must be between -180 and 180.");
-                    return;
-                }}
-                if (isNaN(laser) || laser < -180 || laser > 180) {{
-                    alert("Laser value must be between -180 and 180.");
-                    return;
-                }}
-
-                sendValue("bedRotation", bed);
-                sendValue("laserRotation", laser);
-            }}
-
-            function zeroMotors() {{
-                document.getElementById('bedRotation').value = 0;
-                document.getElementById('laserRotation').value = 0;
-
-                sendValue("bedRotation", 0, true);
-                sendValue("laserRotation", 0, true);
-            }}
-
-            async function toggleLaser() {{
-                const response = await fetch('/toggleLaser', {{
-                    method: 'POST'
-                }});
-                const result = await response.json();
-                console.log(result);
-                updateLaserIndicator(result.on);
-            }}
-
-            function updateLaserIndicator(isOn) {{
-                const indicator = document.getElementById('laserIndicator');
-                const status = document.getElementById('laserStatus');
-                if (isOn) {{
-                    indicator.style.background = 'green';
-                    status.textContent = 'Laser is ON';
-                }} else {{
-                    indicator.style.background = 'red';
-                    status.textContent = 'Laser is OFF';
-                }}
-            }}
-
-            async function moveToTarget() {{
-                const selected = document.getElementById('targetSelector').value;
-                if (!selected) {{
-                    alert("Please select a target first.");
-                    return;
-                }}
-
-                const data = await (await fetch('/targets')).json();
-
-                let bedDeg = 0;
-                let laserDeg = 0;
-
-                // Determine the target's coordinates
-                if (selected.startsWith('turret_')) {{
-                    const id = selected.split('_')[1];
-                    const vals = data.turrets[id];
-                    if (!vals) {{
-                        alert("Invalid turret data.");
-                        return;
-                    }}
-                    bedDeg = (vals.theta * 180 / Math.PI).toFixed(1);
-                    laserDeg = 0;
-                }} 
-                else if (selected.startsWith('globe_')) {{
-                    const id = parseInt(selected.split('_')[1]) - 1;
-                    const vals = data.globes[id];
-                    if (!vals) {{
-                        alert("Invalid globe data.");
-                        return;
-                    }}
-                    bedDeg = (vals.theta * 180 / Math.PI).toFixed(1);
-                    laserDeg = (vals.z).toFixed(1);
-                }}
-
-                console.log(`Moving to target: Bed=${{bedDeg}}°, Laser=${{laserDeg}}°`);
-
-                // Send commands to the backend to move motors
-                await sendValue("bedRotation", bedDeg);
-                await sendValue("laserRotation", laserDeg);
-
-                alert(`Moving to target: Bed=${{bedDeg}}°, Laser=${{laserDeg}}°`);
-            }}
-
-            async function loadTargets() {{
-                const resp = await fetch('/targets');
-                const data = await resp.json();
-                const selector = document.getElementById('targetSelector');
-
-                // Turrets group
-                if (data.turrets) {{
-                    const groupTurrets = document.createElement('optgroup');
-                    groupTurrets.label = "Turrets";
-                    for (const [id, vals] of Object.entries(data.turrets)) {{
-                        const option = document.createElement('option');
-                        option.value = `turret_${{id}}`;
-                        option.textContent = `Turret ${{id}} -> θ=${{(vals.theta||0).toFixed(3)}} rad, r=${{(vals.r||0).toFixed(1)}}`;
-                        groupTurrets.appendChild(option);
-                    }}
-                    selector.appendChild(groupTurrets);
-                }}
-
-                // Globes group
-                if (data.globes) {{
-                    const groupGlobes = document.createElement('optgroup');
-                    groupGlobes.label = "Globes";
-                    data.globes.forEach((g, i) => {{
-                        const option = document.createElement('option');
-                        option.value = `globe_${{i+1}}`;
-                        option.textContent = `Globe ${{i+1}} -> θ=${{(g.theta||0).toFixed(3)}} rad, z=${{(g.z||0).toFixed(1)}}, r=${{(g.r||0).toFixed(1)}}`;
-                        groupGlobes.appendChild(option);
-                    }});
-                    selector.appendChild(groupGlobes);
-                }}
-            }}
-
-            async function selectTarget() {{
-                const selected = document.getElementById('targetSelector').value;
-                if (!selected) {{
-                    document.getElementById('targetDetails').textContent = "";
-                    return;
-                }}
-
-                const res = await fetch('/selectTarget', {{
-                    method: 'POST',
-                    headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
-                    body: 'target=' + encodeURIComponent(selected)
-                }});
-
-                // server returns plain text describing the chosen target
-                const text = await res.text();
-                document.getElementById('targetDetails').textContent = text;
-
-                // OPTIONAL: also update the input fields so user can press Move immediately
-                // The server also returns JSON if you prefer — but to keep it simple we parse text.
-                // If you want the fields automatically updated from the client-side, you can
-                // instead fetch /targets and apply the theta locally (below is a client-side way):
-
-                // client-side update (no extra server roundtrip):
-                const targetsResp = await fetch('/targets');
-                const targets = await targetsResp.json();
-                if (selected.startsWith('turret_')) {{
-                    const tid = selected.split('_')[1];
-                    const theta = targets.turrets[tid].theta;
-                    document.getElementById('bedRotation').value = (theta * 180 / Math.PI).toFixed(2);
-                    // laserRotation left unchanged
-                }} else if (selected.startsWith('globe_')) {{
-                    const gid = parseInt(selected.split('_')[1], 10) - 1;
-                    const g = targets.globes[gid];
-                    document.getElementById('bedRotation').value = (g.theta * 180 / Math.PI).toFixed(2);
-                    // if you want z → update another field, add it here
-                }}
-            }}
-
-            // load on startup
-            loadTargets();
-        </script>
+        loadTargets();
+        updateOrientationDisplay();
+    </script>
 
     </body>
     </html>
