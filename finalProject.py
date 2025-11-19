@@ -6,6 +6,9 @@ from shifter import Shifter
 import time
 import json
 
+## Helpful Websites ------------------------------------------------------------------
+# https://www.w3schools.com/css/css3_buttons.asp
+
 
 ## Find JSON File --------------------------------------------------------------------
 def load_target_data(filename="targets.json"):
@@ -301,7 +304,7 @@ def generateHTML():
 
 
 
-## Run Server Command ------------------------------------------------------------------
+## Run Server Command ----------------------------------------------------------------
 def runServer():
     server_address = ("0.0.0.0", 8080)
     httpd = HTTPServer(server_address, StepperHandler)
@@ -315,7 +318,7 @@ def runServer():
         print("Server stopped cleanly.")
 
 
-## HTTP Request Handler ----------------------------------------------------------------
+## HTTP Request Handler --------------------------------------------------------------
 class StepperHandler(BaseHTTPRequestHandler):
 
     def do_GET(self):
@@ -524,6 +527,6 @@ class Stepper:
             self.angle.value = 0.0
 
 
-## Run Code ----------------------------------------------------------------
+## Run Code --------------------------------------------------------------------------
 if __name__ == "__main__":
     runServer()
