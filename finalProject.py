@@ -128,8 +128,9 @@ def generateHTML():
             <div id="orientationBox">
                 <p><b>Bed Rotation:</b> <span id="bedAngleDisplay">{bedRotation['A']}</span>°</p>
                 <p><b>Laser Rotation:</b> <span id="laserAngleDisplay">{laserRotation['B']}</span>°</p>
-                <p><b>Laser Status:</b> <span id="laserStateDisplay" style="color:{laser_color}; font-weight:bold;">{laser_text}</span></p>
             </div>
+            <br><br><br><br>
+            <input type="button" value="start" onclick="startTrial();">
         </div>
 
 
@@ -255,6 +256,19 @@ def generateHTML():
                     groupGlobes.appendChild(option);
                 }});
                 selector.appendChild(groupGlobes);
+            }}
+
+        async function startTrial() {{
+                const response = await fetch('/startTrial', {{
+                    method: 'POST'
+                }});
+
+                try {{
+                    const data = await response.json();
+                    alert(data.message);
+                }} catch {{
+                    alert("Autonomous mode started.");
+                }}
             }}
         }}
 
