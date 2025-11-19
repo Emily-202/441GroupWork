@@ -146,13 +146,13 @@ if __name__ == '__main__':
     #print("moved to 45 degrees")
     m1.rotate(0)
     #print("moved to 0 degrees")
-    m1.rotate(-90)
+    #m1.rotate(-90)
 
     # If separate multiprocessing.lock objects are used, the second motor
     # will run in parallel with the first motor:
     m2.rotate(90)
    # m2.rotate(-45)
-    #m2.rotate(0)
+    m2.rotate(0)
     #m2.rotate(90)
  
     # While the motors are running in their separate processes, the main
