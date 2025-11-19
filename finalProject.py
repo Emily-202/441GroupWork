@@ -82,11 +82,12 @@ def generateHTML():
     <body style="font-family: Arial; margin: 30px;">
 
     <!-- LEFT SIDE (controls) -->
-        <div id="leftPanel">
         <h2> Stepper Axis Control </h2>
         <p> Use the input fields below to set the desired positions for each axis. <br>
             Click the buttons to move the axes (in degrees) or zero their positions.</p>
 
+            <div style="display: flex; flex-direction: row; gap: 40px; align-items: flex-start;">
+            <div style="flex: 1; min-width: 350px;">
             <br>
 
             <div>
@@ -122,7 +123,7 @@ def generateHTML():
         </div>
 
     <!-- RIGHT SIDE (orientation display) -->
-        <div id="rightPanel">
+        <div style="flex: 1; min-width: 350px;">
             <h2>Robot Orientation</h2>
             <div id="orientationBox">
                 <p><b>Bed Rotation:</b> <span id="bedAngleDisplay">{bedRotation['A']}</span>°</p>
