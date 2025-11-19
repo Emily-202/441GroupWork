@@ -123,7 +123,7 @@ class Stepper:
 
 if __name__ == '__main__':
 
-    s = Shifter(data=16,latch=20,clock=21)   # set up Shifter
+    s = Shifter(data=14,latch=15,clock=18)   # set up Shifter
 
     # Use multiprocessing.Lock() to prevent motors from trying to 
     # execute multiple operations at the same time:
@@ -141,8 +141,11 @@ if __name__ == '__main__':
     # Move as desired, with eacg step occuring as soon as the previous 
     # step ends:
     m1.rotate(180)
+    print("moved to 180 degrees")
     m1.rotate(45)
+    print("moved to 45 degrees")
     m1.rotate(0)
+    print("moved to 0 degrees")
     m1.rotate(-90)
 
     # If separate multiprocessing.lock objects are used, the second motor
