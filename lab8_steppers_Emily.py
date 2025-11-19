@@ -73,6 +73,7 @@ class Stepper:
         with self.angle.get_lock():
             self.angle.value += dir / Stepper.steps_per_degree
             self.angle.value %= 360
+            print(self.angle.value)
 
     # Move relative angle from current position:
     def __rotate(self, delta):
@@ -123,16 +124,16 @@ class Stepper:
 
 if __name__ == '__main__':
 
-    s = Shifter(data=16,latch=20,clock=21)   # set up Shifter
+    s = Shifter(data=14,latch=15,clock=18)   # set up Shifter
 
     # Use multiprocessing.Lock() to prevent motors from trying to 
     # execute multiple operations at the same time:
     lock1 = multiprocessing.Lock()
-    lock2 = multiprocessing.Lock()
+    #lock2 = multiprocessing.Lock()
 
     # Instantiate 2 Steppers:
     m1 = Stepper(s, lock1)
-    m2 = Stepper(s, lock2)
+    m2 = Stepper(s, lock1)
 
     # Zero the motors:
     m1.zero()
@@ -140,17 +141,20 @@ if __name__ == '__main__':
 
     # Move as desired, with eacg step occuring as soon as the previous 
     # step ends:
-    m1.rotate(180)
     m1.rotate(90)
-    m1.rotate(0)
-    m1.rotate(-90)
+    #print("moved to 180 degrees")
+    #m1.rotate(45)
+    #print("moved to 45 degrees")
+    m1.rotate(45)
+    #print("moved to 0 degrees")
+    #m1.rotate(-90)
 
     # If separate multiprocessing.lock objects are used, the second motor
     # will run in parallel with the first motor:
-    m2.rotate(-180)
-    m2.rotate(-90)
-    m2.rotate(0)
     m2.rotate(90)
+   # m2.rotate(-45)
+    m2.rotate(45)
+    #m2.rotate(90)
  
     # While the motors are running in their separate processes, the main
     # code can continue doing its thing: 
