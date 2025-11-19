@@ -77,18 +77,34 @@ def generateHTML():
             h3 {{
                 margin-top: 10px;
             }}
+            .fancyButton {{
+                display: inline-block;
+                padding: 15px 25px;
+                font-size: 24px;
+                cursor: pointer;
+                text-align: center;
+                text-decoration: none;
+                color: #fff;
+                background-color: #04AA6D;
+                border: none;
+                border-radius: 15px;
+                box-shadow: 0 9px #999;
+            }}
+            .fancyButton:active {{
+                box-shadow: 0 5px #666;
+                transform: translateY(4px);
+            }}
         </style>
     </head>
     <body style="font-family: Arial; margin: 30px;">
 
     <!-- LEFT SIDE (controls) -->
-        <h2> Stepper Axis Control </h2>
+        <h3> Stepper Axis Control </h3>
         <p> Use the input fields below to set the desired positions for each axis. <br>
             Click the buttons to move the axes (in degrees) or zero their positions.</p>
 
             <div style="display: flex; flex-direction: row; gap: 40px; align-items: flex-start;">
             <div style="flex: 1; min-width: 350px;">
-            <br>
 
             <div>
                 <p>
@@ -103,7 +119,7 @@ def generateHTML():
                 <input type="button" value="Zero Positions" onclick="zeroMotors();">
             </div>
 
-            <hr>
+            <br><hr><br>
 
             <h3>Laser Control</h3>
             <div id="laserIndicator"
@@ -113,6 +129,7 @@ def generateHTML():
             <br><br>
             <input type="button" id="laserButton" value="Toggle Laser" onclick="toggleLaser();">
 
+            <br><hr><br>
 
             <h3>Select Target</h3>
                 <select id="targetSelector" onchange="selectTarget()">
@@ -130,7 +147,7 @@ def generateHTML():
                 <p><b>Laser Rotation:</b> <span id="laserAngleDisplay">{laserRotation['B']}</span>°</p>
             </div>
             <br><br><br><br>
-            <input type="button" value="start" onclick="startTrial();">
+            <input type="button" value="start" onclick="startTrial();" class="fancyButton">
         </div>
 
 
