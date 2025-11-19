@@ -85,9 +85,10 @@ def generateHTML():
                 text-align: center;
                 text-decoration: none;
                 color: #fff;
-                background-color: #04AA6D;
+                background-color: #30ba6c;
                 border: none;
                 border-radius: 15px;
+                width: 250px;
                 box-shadow: 0 9px #999;
             }}
             .fancyButton:active {{
