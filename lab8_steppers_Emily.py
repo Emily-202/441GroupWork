@@ -140,7 +140,7 @@ if __name__ == '__main__':
     GPIO.setup(23, GPIO.OUT, initial=0)
 
     GPIO.output(23,1)
-    sleep(3)
+    time.sleep(3)
     GPIO.output(23,0)
 
     
