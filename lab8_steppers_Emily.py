@@ -7,6 +7,7 @@
 # too slowly on the Pi Zero, so multiprocessing is needed.
 
 import time
+import sleep
 import multiprocessing
 from shifter import Shifter   # our custom Shifter class
 import math
@@ -135,6 +136,14 @@ if __name__ == '__main__':
     m1 = Stepper(s, lock1)
     m2 = Stepper(s, lock1)
 
+
+    GPIO.setup(23, GPIO.OUT, initial=0)
+
+    GPIO.output(23,1)
+    sleep(3)
+    GPIO.output(23,0)
+
+    
     # Zero the motors:
     m1.zero()
     m2.zero()
@@ -155,7 +164,8 @@ if __name__ == '__main__':
    # m2.rotate(-45)
     m2.rotate(45)
     #m2.rotate(90)
- 
+
+    
     # While the motors are running in their separate processes, the main
     # code can continue doing its thing: 
     try:
