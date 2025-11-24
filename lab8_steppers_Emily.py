@@ -10,6 +10,7 @@ import time
 import multiprocessing
 from shifter import Shifter   # our custom Shifter class
 import math
+import RPi.GPIO as GPIO
 class Stepper:
     """
     Supports operation of an arbitrary number of stepper motors using
