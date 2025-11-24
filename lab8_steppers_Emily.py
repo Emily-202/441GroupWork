@@ -7,7 +7,6 @@
 # too slowly on the Pi Zero, so multiprocessing is needed.
 
 import time
-import sleep
 import multiprocessing
 from shifter import Shifter   # our custom Shifter class
 import math
