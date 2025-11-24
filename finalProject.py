@@ -5,24 +5,23 @@ import multiprocessing
 from shifter import Shifter
 import time
 import json
-
+from RPi import GPIO
+GPIO.setmode(GPIO.BCM)
+lazerpin=23
+ GPIO.setup(lazerpin, GPIO.OUT)
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
 
 
 ## Find JSON File --------------------------------------------------------------------
-def load_target_data(filename="targets.json"):
-    """Return parsed JSON (dict) from targets.json or {} if missing."""
+def load_target_data(url="http://192.168.1.254:8000/positions.json"):
+    """Return parsed JSON (dict) from a URL using urllib."""
     try:
-        with open(filename, "r") as f:
-            return json.load(f)
-    except FileNotFoundError:
-        print("Warning: targets.json not found.")
-        return {}
+        with urlopen(url) as response:
+            return json.load(response)
     except Exception as e:
-        print("Error loading targets.json:", e)
+        print("Error loading JSON from URL:", e)
         return {}
-
 
 ## Get Theta and Z Values from JSON --------------------------------------------------
 def extract_theta_z(data_text):
@@ -31,7 +30,7 @@ def extract_theta_z(data_text):
     with key-value pairs of theta and z (if available) for all items.
     """
     # Convert the JSON text to a Python dictionary
-    data = json.loads(data_text)
+    #data = json.loads(data_text)
 
     result = {}
 
@@ -340,7 +339,9 @@ class StepperHandler(BaseHTTPRequestHandler):
         if self.path == "/toggleLaser":
             laserState["on"] = not laserState["on"]
             print(f"Laser toggled {'ON' if laserState['on'] else 'OFF'}")
-            # TODO: Add GPIO or relay control for actual laser here
+            GPIO.output(lazerpin,1)
+            time.sleep(2)
+            GPIO.output(lazerpin,0)
             self._send_json({"success": True, "on": laserState["on"]})
             return
 
