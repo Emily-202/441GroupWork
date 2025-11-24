@@ -529,4 +529,18 @@ class Stepper:
 
 ## Run Code --------------------------------------------------------------------------
 if __name__ == "__main__":
+s = Shifter(data=14,latch=15,clock=18)   # set up Shifter
+
+    # Use multiprocessing.Lock() to prevent motors from trying to 
+    # execute multiple operations at the same time:
+    lock1 = multiprocessing.Lock()
+    #lock2 = multiprocessing.Lock()
+
+    # Instantiate 2 Steppers:
+    m1 = Stepper(s, lock1)
+    m2 = Stepper(s, lock1)
+
+    # Zero the motors:
+    m1.zero()
+    m2.zero()
     runServer()
