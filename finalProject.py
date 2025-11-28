@@ -408,21 +408,37 @@ class StepperHandler(BaseHTTPRequestHandler):
             if key == "bedRotation":
                 bedRotation['A'] = value
                 if not is_zero:
-                    self.move_bed_stepper(value)
+                    # call the bed motor
+                    try:
+                        # ensure value is numeric (goAngle accepts a number)
+                        self.motor_bed.goAngle(float(value))
+                        print(f"[BED] commanded to {value}°")
+                    except AttributeError:
+                        print("ERROR: handler has no attribute motor_bed (attach motor to StepperHandler before runServer)")
+                    except Exception as e:
+                        print("Error moving bed motor:", e)
                 else:
                     print("Zeroing bed axis reference (no motion).")
 
             elif key == "laserRotation":
                 laserRotation['B'] = value
                 if not is_zero:
-                    self.move_laser_stepper(value)
+                    # call the laser motor
+                    try:
+                        self.motor_laser.goAngle(float(value))
+                        print(f"[LASER] commanded to {value}°")
+                    except AttributeError:
+                        print("ERROR: handler has no attribute motor_laser (attach motor to StepperHandler before runServer)")
+                    except Exception as e:
+                        print("Error moving laser motor:", e)
                 else:
                     print("Zeroing laser axis reference (no motion).")
 
-        self._send_json({"success": True})
+                    self._send_json({"success": True})
 
 
     # ===== MOTOR CONTROL PLACEHOLDERS =====
+    """
     def move_bed_stepper(self, value):
         # enter working code here
         print(f"Moving bed axis to {value}")
@@ -430,6 +446,7 @@ class StepperHandler(BaseHTTPRequestHandler):
     def move_laser_stepper(self, value):
         # enter working code here
         print(f"Moving laser axis to {value}")
+    """
 
     # ===== JSON RESPONSE HELPER =====
     def _send_json(self, obj):
@@ -545,4 +562,7 @@ if __name__ == "__main__":
     # Zero the motors:
     m1.zero()
     m2.zero()
+
+    StepperHandler.motor_bed = m2
+    StepperHandler.motor_laser = m1
     runServer()
