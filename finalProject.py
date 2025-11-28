@@ -8,8 +8,8 @@ import time
 import json
 from RPi import GPIO
 GPIO.setmode(GPIO.BCM)
-lazerpin=23
-GPIO.setup(lazerpin, GPIO.OUT)
+laserpin=23
+GPIO.setup(laserpin, GPIO.OUT)
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
 
@@ -339,11 +339,17 @@ class StepperHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if self.path == "/toggleLaser":
+            # Flip the state
             laserState["on"] = not laserState["on"]
             print(f"Laser toggled {'ON' if laserState['on'] else 'OFF'}")
-            GPIO.output(lazerpin,1)
-            time.sleep(2)
-            GPIO.output(lazerpin,0)
+
+            # Actually turn the laser ON or OFF
+            if laserState["on"]:
+                GPIO.output(laserpin, GPIO.HIGH)
+            else:
+                GPIO.output(laserpin, GPIO.LOW)
+
+            # Send response
             self._send_json({"success": True, "on": laserState["on"]})
             return
 
@@ -563,5 +569,5 @@ if __name__ == "__main__":
     # Zero the motors:
     m1.zero()
     m2.zero()
-    
+
     runServer()
