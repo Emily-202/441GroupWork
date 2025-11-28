@@ -1,6 +1,7 @@
 from http.server import BaseHTTPRequestHandler, HTTPServer
 import math
 import urllib.parse, json
+from urllib.request import urlopen
 import multiprocessing
 from shifter import Shifter
 import time
@@ -8,7 +9,7 @@ import json
 from RPi import GPIO
 GPIO.setmode(GPIO.BCM)
 lazerpin=23
- GPIO.setup(lazerpin, GPIO.OUT)
+GPIO.setup(lazerpin, GPIO.OUT)
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
 
@@ -530,7 +531,7 @@ class Stepper:
 
 ## Run Code --------------------------------------------------------------------------
 if __name__ == "__main__":
-s = Shifter(data=14,latch=15,clock=18)   # set up Shifter
+    s = Shifter(data=14,latch=15,clock=18)   # set up Shifter
 
     # Use multiprocessing.Lock() to prevent motors from trying to 
     # execute multiple operations at the same time:
