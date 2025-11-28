@@ -278,20 +278,21 @@ def generateHTML():
                 }});
                 selector.appendChild(groupGlobes);
             }}
+        }}
 
         async function startTrial() {{
-                const response = await fetch('/startTrial', {{
-                    method: 'POST'
-                }});
+            const response = await fetch('/startTrial', {{
+                method: 'POST'
+            }});
 
-                try {{
-                    const data = await response.json();
-                    alert(data.message);
-                }} catch {{
-                    alert("Autonomous mode started.");
-                }}
+            try {{
+                const data = await response.json();
+                alert(data.message);
+            }} catch {{
+                alert("Autonomous mode started.");
             }}
         }}
+        
 
         loadTargets();
         updateOrientationDisplay();
@@ -411,7 +412,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                     # call the bed motor
                     try:
                         # ensure value is numeric (goAngle accepts a number)
-                        self.motor_bed.goAngle(float(value))
+                        m2.goAngle(float(value))
                         print(f"[BED] commanded to {value}°")
                     except AttributeError:
                         print("ERROR: handler has no attribute motor_bed (attach motor to StepperHandler before runServer)")
@@ -425,7 +426,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 if not is_zero:
                     # call the laser motor
                     try:
-                        self.motor_laser.goAngle(float(value))
+                        m1.goAngle(float(value))
                         print(f"[LASER] commanded to {value}°")
                     except AttributeError:
                         print("ERROR: handler has no attribute motor_laser (attach motor to StepperHandler before runServer)")
@@ -562,7 +563,5 @@ if __name__ == "__main__":
     # Zero the motors:
     m1.zero()
     m2.zero()
-
-    StepperHandler.motor_bed = m2
-    StepperHandler.motor_laser = m1
+    
     runServer()
