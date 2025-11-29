@@ -10,6 +10,8 @@ from RPi import GPIO
 GPIO.setmode(GPIO.BCM)
 laserpin=23
 GPIO.setup(laserpin, GPIO.OUT)
+GPIO.output(laserpin, GPIO.LOW)
+
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
 
