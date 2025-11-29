@@ -201,21 +201,22 @@ def generateHTML():
         }}
 
         async function toggleLaser() {{
-            const response = await fetch('/toggleLaser', {{ method: 'POST' }});
-            const result = await response.json();
-            updateLaserIndicator(result.on);
-            updateOrientationDisplay();
-        }}
+            try {{
+                const response = await fetch('/toggleLaser', {{ method: 'POST' }});
+                const result = await response.json();
 
-        function updateLaserIndicator(isOn) {{
-            const indicator = document.getElementById('laserIndicator');
-            const status = document.getElementById('laserStatus');
-            if (isOn) {{
-                indicator.style.background = 'green';
-                status.textContent = 'Laser is ON';
-            }} else {{
-                indicator.style.background = 'red';
-                status.textContent = 'Laser is OFF';
+                const indicator = document.getElementById('laserIndicator');
+                const status = document.getElementById('laserStatus');
+                if (result.on) {{
+                    indicator.style.background = 'green';
+                    status.textContent = 'Laser is ON';
+                }} else {{
+                    indicator.style.background = 'red';
+                    status.textContent = 'Laser is OFF';
+                }}
+            }} catch (err) {{
+                console.error("Error toggling laser:", err);
+                alert("Failed to toggle laser. See console for details.");
             }}
         }}
 
