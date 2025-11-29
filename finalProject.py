@@ -161,10 +161,6 @@ def generateHTML():
                 document.getElementById('bedRotation').value;
             document.getElementById('laserAngleDisplay').textContent =
                 document.getElementById('laserRotation').value;
-
-            const laserOn = document.getElementById('laserIndicator').style.background === 'green';
-            document.getElementById('laserStateDisplay').textContent = laserOn ? 'ON' : 'OFF';
-            document.getElementById('laserStateDisplay').style.color = laserOn ? 'green' : 'red';
         }}
 
         async function sendValue(axis, value, isZero=false) {{
@@ -317,6 +313,7 @@ def runServer():
         print("\nShutting down server...")
         httpd.server_close()
         print("Server stopped cleanly.")
+        GPIO.cleanup()
 
 
 ## HTTP Request Handler --------------------------------------------------------------
@@ -418,7 +415,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                     # call the bed motor
                     try:
                         # ensure value is numeric (goAngle accepts a number)
-                        m2.goAngle(float(value))
+                        self.motor_bed.goAngle(float(value))
                         print(f"[BED] commanded to {value}°")
                     except AttributeError:
                         print("ERROR: handler has no attribute motor_bed (attach motor to StepperHandler before runServer)")
@@ -432,7 +429,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 if not is_zero:
                     # call the laser motor
                     try:
-                        m1.goAngle(float(value))
+                        self.motor_laser.goAngle(float(value))
                         print(f"[LASER] commanded to {value}°")
                     except AttributeError:
                         print("ERROR: handler has no attribute motor_laser (attach motor to StepperHandler before runServer)")
