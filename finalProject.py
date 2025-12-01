@@ -217,6 +217,7 @@ def generateHTML():
             }} catch (err) {{
                 console.error("Error toggling laser:", err);
                 alert("Failed to toggle laser. See console for details.");
+                return;
             }}
         }}
 
@@ -259,8 +260,8 @@ def generateHTML():
                 groupTurrets.label = "Turrets";
                 for (const [id, vals] of Object.entries(data.turrets)) {{
                     const option = document.createElement('option');
-                    option.value = `turret_${id}`;
-                    option.textContent = `Turret ${id} -> θ=${(vals.theta or 0).toFixed(3)} rad, r=${(vals.r or 0).toFixed(1)}`;
+                    option.value = `turret_${{id}}`;
+                    option.textContent = `Turret ${{id}} -> θ=${{(vals.theta || 0).toFixed(3)}} rad, r=${{(vals.r || 0).toFixed(1)}}`;
                     groupTurrets.appendChild(option);
                 }}
                 selector.appendChild(groupTurrets);
@@ -271,8 +272,8 @@ def generateHTML():
                 groupGlobes.label = "Globes";
                 data.globes.forEach((g, i) => {{
                     const option = document.createElement('option');
-                    option.value = `globe_${i+1}`;
-                    option.textContent = `Globe ${i+1} -> θ=${(g.theta or 0).toFixed(3)} rad, z=${(g.z or 0).toFixed(1)}, r=${(g.r or 0).toFixed(1)}`;
+                    option.value = `globe_${{i+1}}`;
+                    option.textContent = `Globe ${{i+1}} -> θ=${{(g.theta || 0).toFixed(3)}} rad, z=${{(g.z || 0).toFixed(1)}}, r=${{(g.r || 0).toFixed(1)}}`;
                     groupGlobes.appendChild(option);
                 }});
                 selector.appendChild(groupGlobes);
@@ -308,7 +309,7 @@ def generateHTML():
 def runServer():
     server_address = ("0.0.0.0", 8080)
     httpd = HTTPServer(server_address, StepperHandler)
-    print("Server running on http://localhost:8080 (Press Ctrl+C to stop)")
+    print("Server running on http://<pi-ip>:8080/ (Press Ctrl+C to stop)")
 
     try:
         httpd.serve_forever()
