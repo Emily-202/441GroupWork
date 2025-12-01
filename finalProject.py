@@ -259,8 +259,8 @@ def generateHTML():
                 groupTurrets.label = "Turrets";
                 for (const [id, vals] of Object.entries(data.turrets)) {{
                     const option = document.createElement('option');
-                    option.value = `turret_${{id}}`;
-                    option.textContent = `Turret ${{id}} -> θ=${{(vals.theta||0).toFixed(3)}} rad, r=${{(vals.r||0).toFixed(1)}}`;
+                    option.value = `turret_${id}`;
+                    option.textContent = `Turret ${id} -> θ=${(vals.theta||0).toFixed(3)} rad, r=${(vals.r||0).toFixed(1)}`;
                     groupTurrets.appendChild(option);
                 }}
                 selector.appendChild(groupTurrets);
@@ -271,8 +271,8 @@ def generateHTML():
                 groupGlobes.label = "Globes";
                 data.globes.forEach((g, i) => {{
                     const option = document.createElement('option');
-                    option.value = `globe_${{i+1}}`;
-                    option.textContent = `Globe ${{i+1}} -> θ=${{(g.theta||0).toFixed(3)}} rad, z=${{(g.z||0).toFixed(1)}}, r=${{(g.r||0).toFixed(1)}}`;
+                    option.value = `globe_${i+1}`;
+                    option.textContent = `Globe ${i+1} -> θ=${(g.theta||0).toFixed(3)} rad, z=${(g.z||0).toFixed(1)}, r=${(g.r||0).toFixed(1)}`;
                     groupGlobes.appendChild(option);
                 }});
                 selector.appendChild(groupGlobes);
