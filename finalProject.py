@@ -708,7 +708,7 @@ if __name__ == "__main__":
     m2.zero()
 
     # Attach to handler so handler can move motors
-    StepperHandler.motor_laser = m1
-    StepperHandler.motor_bed = m2
+    StepperHandler.motor_laser = m2
+    StepperHandler.motor_bed = m1
 
     runServer()
