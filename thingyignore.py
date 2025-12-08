@@ -1,0 +1,10 @@
+network={
+    ssid="Holocron"
+    psk="hello123"
+    priority=10
+}
+network={
+    ssid="meWIFI-Classroom"
+    psk="analysis-SUNRISE-grecian"
+    priority=1
+}
