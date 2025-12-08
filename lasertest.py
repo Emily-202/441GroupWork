@@ -103,7 +103,6 @@ class Stepper:
 
         p = multiprocessing.Process(target=self.__rotate, args=(delta,))
         p.start()
-        p.join()
     #moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero     
     def goAngleXZ(self, targetAngle,selfPosAngle):
         alpha=.5*(2*math.pi-abs(targetAngle-selfPosAngle))
@@ -145,26 +144,6 @@ if __name__ == '__main__':
     GPIO.output(23,0)
 
     
-    # Zero the motors:
-    m1.zero()
-    m2.zero()
-
-    # Move as desired, with eacg step occuring as soon as the previous 
-    # step ends:
-    m1.goAngle(90)
-    #print("moved to 180 degrees")
-    #m1.rotate(45)
-    #print("moved to 45 degrees")
-    m1.goAngle(45)
-    #print("moved to 0 degrees")
-    m1.goAngle(0)
-
-    # If separate multiprocessing.lock objects are used, the second motor
-    # will run in parallel with the first motor:
-    m2.goAngle(90)
-   # m2.rotate(-45)
-    m2.goAngle(45)
-    m2.goAngle(0)
 
     
     # While the motors are running in their separate processes, the main
@@ -174,4 +153,3 @@ if __name__ == '__main__':
             pass
     except:
         print('\nend')
-
