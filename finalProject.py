@@ -528,6 +528,7 @@ class Stepper:
     # Move to an absolute angle taking the shortest possible path:
     def goAngle(self, tarAngle):
         # read angle safely
+        
         with self.angle.get_lock():
             curAngle = self.angle.value
 
@@ -536,7 +537,8 @@ class Stepper:
 
         p = multiprocessing.Process(target=self.__rotate, args=(delta,))
         p.start()
-    # moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero     
+    # moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero   
+   
     def goAngleXZ(self, targetAngle,selfPosAngle):
         alpha=.5*(2*math.pi-abs(targetAngle-selfPosAngle))
         if (targetAngle-selfPosAngle <0):
