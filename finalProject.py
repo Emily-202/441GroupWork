@@ -137,6 +137,15 @@ def generateHTML():
 
             <br><hr><br>
 
+            <h3>Set Robot Position</h3>
+            <select id="robotPosSelector">
+                <option value="">-- Choose turret as robot position --</option>
+            </select>
+            <br><br>
+            <input type="button" value="Set Robot Position" onclick="setRobotPosition();">
+
+            <br><hr><br>
+
             <h3>Select Target</h3>
                 <select id="targetSelector" onchange="selectTarget()">
                     <option value="">-- Choose a target --</option>
@@ -250,47 +259,99 @@ def generateHTML():
             updateOrientationDisplay();
         }}
 
+        // Store robot position in JS (absolute angles)
+        let robotPosition = {{
+            bed: null,
+            laser: null
+        }};
+
+        // Code to populate drowpdown with turret/globe positions
         async function loadTargets() {{
             const resp = await fetch('/targets');
             const data = await resp.json();
-            const selector = document.getElementById('targetSelector');
 
+            // ====== TARGET DROPDOWN ======
+            const selector = document.getElementById('targetSelector');
+            selector.innerHTML = "";
+            const defaultOption = document.createElement('option');
+            defaultOption.value = "";
+            defaultOption.textContent = "-- Choose a target --";
+            selector.appendChild(defaultOption);
+
+            // Turrets
             if (data.turrets) {{
                 const groupTurrets = document.createElement('optgroup');
                 groupTurrets.label = "Turrets";
+
                 for (const [id, vals] of Object.entries(data.turrets)) {{
                     const option = document.createElement('option');
                     option.value = `turret_${{id}}`;
-                    option.textContent = `Turret ${{id}} -> θ=${{(vals.theta || 0).toFixed(3)}} rad, r=${{(vals.r || 0).toFixed(1)}}`;
+                    option.textContent = `Turret ${{id}} → θ=${{vals.theta.toFixed(3)}} rad`;
                     groupTurrets.appendChild(option);
                 }}
                 selector.appendChild(groupTurrets);
             }}
 
+            // Globes
             if (data.globes) {{
                 const groupGlobes = document.createElement('optgroup');
                 groupGlobes.label = "Globes";
+
                 data.globes.forEach((g, i) => {{
                     const option = document.createElement('option');
                     option.value = `globe_${{i+1}}`;
-                    option.textContent = `Globe ${{i+1}} -> θ=${{(g.theta || 0).toFixed(3)}} rad, z=${{(g.z || 0).toFixed(1)}}, r=${{(g.r || 0).toFixed(1)}}`;
+                    option.textContent = `Globe ${{i+1}} → θ=${{g.theta.toFixed(3)}} rad, z=${{g.z.toFixed(1)}}`;
                     groupGlobes.appendChild(option);
                 }});
                 selector.appendChild(groupGlobes);
             }}
+
+            // ====== ROBOT POSITION DROPDOWN ======
+            const robSel = document.getElementById('robotPosSelector');
+            robSel.innerHTML = "";
+            const defaultRobot = document.createElement('option');
+            defaultRobot.value = "";
+            defaultRobot.textContent = "-- Choose turret as robot position --";
+            robSel.appendChild(defaultRobot);
+
+            for (const [id, vals] of Object.entries(data.turrets || {})) {{
+                const option = document.createElement('option');
+                option.value = `turret_${{id}}`;
+                option.textContent = `Turret ${{id}} (θ=${{vals.theta.toFixed(3)}} rad)`;
+                robSel.appendChild(option);
+            }}
         }}
 
-        async function startTrial() {{
-            const response = await fetch('/startTrial', {{
-                method: 'POST'
-            }});
 
-            try {{
-                const data = await response.json();
-                alert(data.message);
-            }} catch {{
-                alert("Autonomous mode started.");
-            }}
+        // ====== SET ROBOT POSITION ======
+        async function setRobotPosition() {{
+            const sel = document.getElementById('robotPosSelector');
+            const choice = sel.value;
+            if (!choice) return alert("Select a turret position first.");
+
+            const id = choice.split("_")[1];
+
+            // Load JSON so we know the turret positions
+            const data = await (await fetch('/targets')).json();
+            const turret = data.turrets[id];
+
+            if (!turret) return alert("Invalid turret selected.");
+
+            // Convert to degrees (absolute)
+            const bedDeg = turret.theta * 180 / Math.PI;
+            const laserDeg = 0;  // Always zero when robot is at a turret
+
+            // Save robot position
+            robotPosition.bed = bedDeg;
+            robotPosition.laser = laserDeg;
+
+            // Update UI
+            document.getElementById('bedRotation').value = bedDeg.toFixed(1);
+            document.getElementById('laserRotation').value = 0;
+
+            updateOrientationDisplay();
+
+            alert(`Robot position set to Turret ${{id}}.\nBed=${{bedDeg.toFixed(1)}}°, Laser=0°`);
         }}
         
 
@@ -339,6 +400,8 @@ class StepperHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self):
+        
+        # Laser toggle update
         if self.path == "/toggleLaser":
             # Flip the state
             laserState["on"] = not laserState["on"]
@@ -354,6 +417,7 @@ class StepperHandler(BaseHTTPRequestHandler):
             self._send_json({"success": True, "on": laserState["on"]})
             return
 
+        # Target/Globe selection update
         if self.path == "/selectTarget":
             # read posted target name
             length = int(self.headers.get('Content-Length', 0))
@@ -386,6 +450,25 @@ class StepperHandler(BaseHTTPRequestHandler):
             self.send_header("Content-Type", "text/plain")
             self.end_headers()
             self.wfile.write(msg.encode('utf-8'))
+            return
+
+        if self.path == "/moveToTarget":
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length).decode("utf-8")
+            parsed = urllib.parse.parse_qs(body)
+
+            target_name = parsed.get("chosenTarget", [""])[0]
+            robotPosition = parsed.get("robotPosition", [""])[0]
+
+            print(f"[MOVE TO TARGET] robot at: {robotPosition}, target selected: {target_name}")
+
+            # We do NOT implement the math here yet.
+            # This is where you will calculate:
+            #   bed angle = turret.theta → globe.theta
+            #   laser angle = based on Z and geometry
+            # But you told me to finish HTML first, so this only acknowledges success.
+
+            self._send_json({"success": True})
             return
 
         # otherwise handle normal axis control as before
@@ -444,17 +527,6 @@ class StepperHandler(BaseHTTPRequestHandler):
 
         self._send_json({"success": True})
 
-
-    # ===== MOTOR CONTROL PLACEHOLDERS =====
-    """
-    def move_bed_stepper(self, value):
-        # enter working code here
-        print(f"Moving bed axis to {value}")
-
-    def move_laser_stepper(self, value):
-        # enter working code here
-        print(f"Moving laser axis to {value}")
-    """
 
     # ===== JSON RESPONSE HELPER =====
     def _send_json(self, obj):
