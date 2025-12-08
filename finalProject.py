@@ -165,7 +165,6 @@ def generateHTML():
             <input type="button" value="start" onclick="startTrial();" class="fancyButton">
         </div>
 
-
     <script>
         function updateOrientationDisplay() {{
             document.getElementById('bedAngleDisplay').textContent =
@@ -306,7 +305,7 @@ def generateHTML():
                 selector.appendChild(groupGlobes);
             }}
 
-            // ====== ROBOT POSITION DROPDOWN ======
+            // Set the robot position dropdown list
             const robSel = document.getElementById('robotPosSelector');
             robSel.innerHTML = "";
             const defaultRobot = document.createElement('option');
@@ -314,7 +313,7 @@ def generateHTML():
             defaultRobot.textContent = "-- Choose turret as robot position --";
             robSel.appendChild(defaultRobot);
 
-            for (const [id, vals] of Object.entries(data.turrets || {})) {{
+            for (const [id, vals] of Object.entries(data.turrets || {{}})) {{
                 const option = document.createElement('option');
                 option.value = `turret_${{id}}`;
                 option.textContent = `Turret ${{id}} (θ=${{vals.theta.toFixed(3)}} rad)`;
@@ -323,7 +322,7 @@ def generateHTML():
         }}
 
 
-        // ====== SET ROBOT POSITION ======
+        // Set the robot position
         async function setRobotPosition() {{
             const sel = document.getElementById('robotPosSelector');
             const choice = sel.value;
