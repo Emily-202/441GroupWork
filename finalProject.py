@@ -453,22 +453,80 @@ class StepperHandler(BaseHTTPRequestHandler):
             return
 
         if self.path == "/moveToTarget":
+            # Read POST data
             length = int(self.headers.get("Content-Length", 0))
             body = self.rfile.read(length).decode("utf-8")
             parsed = urllib.parse.parse_qs(body)
 
             target_name = parsed.get("chosenTarget", [""])[0]
-            robotPosition = parsed.get("robotPosition", [""])[0]
+            robot_pos_str = parsed.get("robotPosition", [""])[0]
 
-            print(f"[MOVE TO TARGET] robot at: {robotPosition}, target selected: {target_name}")
+            print(f"[MOVE TO TARGET] robot at: {robot_pos_str}, target selected: {target_name}")
 
-            # We do NOT implement the math here yet.
-            # This is where you will calculate:
-            #   bed angle = turret.theta → globe.theta
-            #   laser angle = based on Z and geometry
-            # But you told me to finish HTML first, so this only acknowledges success.
+            # Look at robot current position
+            try:
+                robot_bed_deg, robot_laser_deg = map(float, robot_pos_str.split(","))
+            except Exception:
+                robot_bed_deg = robot_laser_deg = 0  # default if not provided
 
-            self._send_json({"success": True})
+            # Load the JSON target data
+            data = load_target_data()
+
+            bed_angle_deg = 0
+            laser_angle_deg = 0
+
+            # Determine target type and compute required angles
+            if target_name.startswith("turret_"):
+                tid = target_name.split("_")[1]
+                turret = data.get("turrets", {}).get(tid)
+                if turret:
+                    bed_angle_deg = math.degrees(turret["theta"])
+                    laser_angle_deg = 0  # laser always 0 at turret
+                else:
+                    self._send_json({"success": False, "message": "Turret not found"})
+                    return
+
+            elif target_name.startswith("globe_"):
+                gid = int(target_name.split("_")[1]) - 1
+                globes = data.get("globes", [])
+                if gid < 0 or gid >= len(globes):
+                    self._send_json({"success": False, "message": "Globe not found"})
+                    return
+
+                globe = globes[gid]
+
+                # --- Use Stepper movement system formulas ---
+                # Bed angle: move in XZ plane (2D angular displacement)
+                target_theta_rad = globe["theta"]
+                self.motor_bed.goAngleXZ(target_theta_rad, math.radians(robot_bed_deg))
+
+                # Laser angle: move in Y plane (height difference)
+                target_z = globe.get("z", 0)
+                radius = 1.0  # Replace with actual radius if known
+                self.motor_laser.goAngleY(
+                    target_theta_rad,
+                    math.radians(robot_bed_deg),
+                    robot_laser_deg,  # current laser height/angle
+                    radius,
+                    target_z
+                )
+
+                # For UI feedback, convert target_theta_rad to degrees
+                bed_angle_deg = math.degrees(target_theta_rad)
+                laser_angle_deg = target_z
+
+            else:
+                self._send_json({"success": False, "message": "Unknown target"})
+                return
+
+            print(f"Commanding bed → {bed_angle_deg:.1f}°, laser → {laser_angle_deg:.1f}°")
+
+            # return JSON response with final angles
+            self._send_json({
+                "success": True,
+                "bed": bed_angle_deg,
+                "laser": laser_angle_deg
+            })
             return
 
         # otherwise handle normal axis control as before
@@ -499,36 +557,39 @@ class StepperHandler(BaseHTTPRequestHandler):
             if key == "bedRotation":
                 bedRotation['A'] = value
                 if not is_zero:
-                    # call the bed motor
                     try:
-                        # ensure value is numeric (goAngle accepts a number)
                         self.motor_bed.goAngle(float(value))
                         print(f"[BED] commanded to {value}°")
-                    except AttributeError:
-                        print("ERROR: handler has no attribute motor_bed (attach motor to StepperHandler before runServer)")
                     except Exception as e:
                         print("Error moving bed motor:", e)
                 else:
-                    print("Zeroing bed axis reference (no motion).")
+                    # Proper zeroing
+                    try:
+                        self.motor_bed.zero()
+                        print("Bed axis zeroed.")
+                    except Exception as e:
+                        print("Error zeroing bed motor:", e)
 
             elif key == "laserRotation":
                 laserRotation['B'] = value
                 if not is_zero:
-                    # call the laser motor
                     try:
                         self.motor_laser.goAngle(float(value))
                         print(f"[LASER] commanded to {value}°")
-                    except AttributeError:
-                        print("ERROR: handler has no attribute motor_laser (attach motor to StepperHandler before runServer)")
                     except Exception as e:
                         print("Error moving laser motor:", e)
                 else:
-                    print("Zeroing laser axis reference (no motion).")
+                    # Proper zeroing
+                    try:
+                        self.motor_laser.zero()
+                        print("Laser axis zeroed.")
+                    except Exception as e:
+                        print("Error zeroing laser motor:", e)
 
         self._send_json({"success": True})
 
 
-    # ===== JSON RESPONSE HELPER =====
+    # JSON response helper
     def _send_json(self, obj):
         response = json.dumps(obj).encode()
         self.send_response(200)
