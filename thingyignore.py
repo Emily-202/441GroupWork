@@ -1,6 +1,6 @@
 network={
     ssid="Holocron"
-    psk="hello123"
+    psk="holocron"
     priority=10
 }
 network={
