@@ -20,7 +20,7 @@ Globalheight=10.955
 
 
 ## Find JSON File --------------------------------------------------------------------
-"""
+
 def load_target_data(url="http://192.168.1.254:8000/positions.json"):
     # Return parsed JSON (dict) from a URL using urllib
     try:
@@ -28,20 +28,19 @@ def load_target_data(url="http://192.168.1.254:8000/positions.json"):
             return json.load(response)
     except Exception as e:
         print("Error loading JSON from URL:", e)
-        return {}
-"""
 
-def load_target_data(local_filename="targets.json"):
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    local_path = os.path.join(script_dir, local_filename)
+        local_filename="targets.json"
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        local_path = os.path.join(script_dir, local_filename)
 
-    try:
-        with open(local_path, "r") as f:
-            print(f"Loaded local JSON file: {local_path}")
-            return json.load(f)
-    except Exception as e:
-        print(f"Error loading local JSON file '{local_path}':", e)
-        return {}
+        try:
+            with open(local_path, "r") as f:
+                print(f"Loaded local JSON file: {local_path}")
+                return json.load(f)
+        except Exception as e:
+            print(f"Error loading local JSON file '{local_path}':", e)
+            return {}
+
 
 ## Get Theta and Z Values from JSON --------------------------------------------------
 def extract_theta_z(data_text):
