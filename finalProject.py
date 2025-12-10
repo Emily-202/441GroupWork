@@ -13,7 +13,7 @@ GPIO.setup(laserpin, GPIO.OUT)
 GPIO.output(laserpin, GPIO.LOW)
 Globalradius=0
 Globalangle=0
-Globalheight=0
+Globalheight=10.955
 
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
