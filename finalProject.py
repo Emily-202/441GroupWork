@@ -11,6 +11,8 @@ GPIO.setmode(GPIO.BCM)
 laserpin=23
 GPIO.setup(laserpin, GPIO.OUT)
 GPIO.output(laserpin, GPIO.LOW)
+
+## Global Variables ------------------------------------------------------------------
 Globalradius=0
 Globalangle=0
 Globalheight=10.955
@@ -356,15 +358,18 @@ def generateHTML():
             const bedDeg = turret.theta * 180 / Math.PI;
             const laserDeg = 0;  // Always zero when robot is at a turret
 
-            // Save robot position
-            robotPosition.bed = bedDeg;
-            robotPosition.laser = laserDeg;
+            try {{
+                let response = await fetch('/setRobotPosition', {{
+                    method: "POST",
+                    headers: {{ "Content-Type": "application/x-www-form-urlencoded" }},
+                    body: `bed=${{bedDeg}}&laser=${{laserDeg}}`
+                }});
 
-            // Update UI
-            document.getElementById('bedRotation').value = bedDeg.toFixed(1);
-            document.getElementById('laserRotation').value = 0;
-
-            updateOrientationDisplay();
+                const result = await response.json();
+                console.log("[SERVER RESPONSE]", result);
+            }} catch (err) {{
+                console.error("Error sending robot position:", err);
+            }}
 
             alert(`Robot position set to Turret ${{id}}.\nBed=${{bedDeg.toFixed(1)}}°, Laser=0°`);
         }}
@@ -416,6 +421,22 @@ class StepperHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         
+        # Setting turret position update
+        if self.path == "/setRobotPosition":
+            length = int(self.headers.get("Content-Length", 0))
+            body = self.rfile.read(length).decode("utf-8")
+            parsed = urllib.parse.parse_qs(body)
+
+            try:
+                Globalangle = float(parsed.get("theta", [0])[0])
+                Globalradius = float(parsed.get("r", [0])[0])
+                print(f"Robot position set: angle={Globalangle}, radius={Globalradius}")
+            except:
+                print("Invalid robot position POST")
+
+            self._send_json({"success": True})
+            return
+
         # Laser toggle update
         if self.path == "/toggleLaser":
             # Flip the state
