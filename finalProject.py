@@ -209,8 +209,8 @@ def generateHTML():
         }}
 
         function moveMotors() {{
-            let bed = parseInt(document.getElementById('bedRotation').value);
-            let laser = parseInt(document.getElementById('laserRotation').value);
+            let bed = parseFloat(document.getElementById('bedRotation').value);
+            let laser = parseFloat(document.getElementById('laserRotation').value);
             if (isNaN(bed) || bed < -180 || bed > 180) return alert("Bed value must be between -180 and 180.");
             if (isNaN(laser) || laser < -180 || laser > 180) return alert("Laser value must be between -180 and 180.");
             sendValue("bedRotation", bed);
@@ -559,7 +559,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 continue  # skip the flag itself
 
             try:
-                value = int(params[key][0])
+                value = float(params[key][0])
             except:
                 self._send_json({"success": False, "message": "Invalid number format"})
                 return
