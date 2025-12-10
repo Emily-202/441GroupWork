@@ -6,7 +6,6 @@ import multiprocessing
 from shifter import Shifter
 import time
 from RPi import GPIO
-import os
 GPIO.setmode(GPIO.BCM)
 laserpin=23
 GPIO.setup(laserpin, GPIO.OUT)
