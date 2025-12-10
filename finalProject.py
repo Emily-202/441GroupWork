@@ -683,6 +683,7 @@ class Stepper:
         # shortest path math: force into [-180, 180]
         #delta = ((tarAngle - curAngle + 540) % 360) - 180
         delta = tarAngle - curAngle
+        print(f'delta: {delta}')
         p = multiprocessing.Process(target=self.__rotate, args=(delta,))
         p.start()
         p.join()
