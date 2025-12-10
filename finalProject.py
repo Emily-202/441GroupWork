@@ -30,7 +30,7 @@ def load_target_data(url="http://192.168.1.254:8000/positions.json"):
             return json.load(response)
     except Exception as e:
         print("Error loading JSON from URL:", e)
-
+        """
         local_filename="targets.json"
         script_dir = os.path.dirname(os.path.abspath(__file__))
         local_path = os.path.join(script_dir, local_filename)
@@ -42,6 +42,8 @@ def load_target_data(url="http://192.168.1.254:8000/positions.json"):
         except Exception as e:
             print(f"Error loading local JSON file '{local_path}':", e)
             return {}
+        """
+        return {}
 
 
 ## Get Theta and Z Values from JSON --------------------------------------------------
