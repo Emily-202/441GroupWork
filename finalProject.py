@@ -8,6 +8,7 @@ import time
 from RPi import GPIO
 
 ## GPIO Setup ------------------------------------------------------------------------
+GPIO.cleanup()
 GPIO.setmode(GPIO.BCM)
 time.sleep(1)
 laserpin=23
@@ -130,12 +131,12 @@ def generateHTML():
 
             <div>
                 <p>
-                    <label for="bedRotation">Bed Position [-180 and 180]:</label>
-                    <input type="number" id="bedRotation" min="-180" max="180" value="{bedRotation['A']}"><br><br>
+                    <label for="bedRotation">Bed Position [-90 and 90]:</label>
+                    <input type="number" id="bedRotation" min="-90" max="90" value="{bedRotation['A']}"><br><br>
                 </p>
                 <p>
-                    <label for="laserRotation">Laser Position [-180 and 180]:</label>
-                    <input type="number" id="laserRotation" min="-180" max="180" value="{laserRotation['B']}"><br><br>
+                    <label for="laserRotation">Laser Position [-90 and 90]:</label>
+                    <input type="number" id="laserRotation" min="-90" max="90" value="{laserRotation['B']}"><br><br>
                 </p>
                 <input type="button" value="Move" onclick="moveMotors();">
                 <input type="button" value="Zero Positions" onclick="zeroMotors();">
@@ -210,8 +211,8 @@ def generateHTML():
         function moveMotors() {{
             let bed = parseFloat(document.getElementById('bedRotation').value);
             let laser = parseFloat(document.getElementById('laserRotation').value);
-            if (isNaN(bed) || bed < -180 || bed > 180) return alert("Bed value must be between -180 and 180.");
-            if (isNaN(laser) || laser < -180 || laser > 180) return alert("Laser value must be between -180 and 180.");
+            if (isNaN(bed) || bed < -90 || bed > 90) return alert("Bed value must be between -90 and 90.");
+            if (isNaN(laser) || laser < -90 || laser > 90) return alert("Laser value must be between -90 and 90.");
             sendValue("bedRotation", bed);
             sendValue("laserRotation", laser);
         }}
