@@ -427,6 +427,8 @@ class StepperHandler(BaseHTTPRequestHandler):
             body = self.rfile.read(length).decode("utf-8")
             parsed = urllib.parse.parse_qs(body)
 
+            global Globalangle, Globalradius
+
             try:
                 Globalangle = float(parsed.get("theta", [0])[0])
                 Globalradius = float(parsed.get("r", [0])[0])
