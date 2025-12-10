@@ -1,4 +1,4 @@
-from http.server import BaseHTTPRequestHandler, HTTPServer
+from http.server import BaseHTTPRequestHandler, HTTPServer, ThreadingHTTPServer
 import math
 import urllib.parse, json
 from urllib.request import urlopen
@@ -387,7 +387,7 @@ def generateHTML():
 ## Run Server Command ----------------------------------------------------------------
 def runServer():
     server_address = ("0.0.0.0", 8080)
-    httpd = HTTPServer(server_address, StepperHandler)
+    httpd = ThreadingHTTPServer(server_address, StepperHandler)
     print("Server running on http://<pi-ip>:8080/ (Press Ctrl+C to stop)")
 
     try:
