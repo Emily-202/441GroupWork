@@ -11,6 +11,9 @@ GPIO.setmode(GPIO.BCM)
 laserpin=23
 GPIO.setup(laserpin, GPIO.OUT)
 GPIO.output(laserpin, GPIO.LOW)
+Globalradius=0
+Globalangle=0
+Globalheight=0
 
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
@@ -672,16 +675,21 @@ class Stepper:
         p.join()
     # moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero   
    
-    def goAngleXZ(self, targetAngle,selfPosAngle):
-        alpha=.5*(2*math.pi-abs(targetAngle-selfPosAngle))
-        if (targetAngle-selfPosAngle <0):
+    def goAngleXZ(self, targetAngle):
+        alpha=.5*(2*math.pi-abs(targetAngle-Globalangle))
+        alpha=math.degrees(alpha)
+        if (targetAngle-Globalangle <0):
             alpha=-alpha
         self.goAngle(alpha)
    # moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero and circle radius our own height and target height     
-    def goAngleY(self, targetAngle, selfPosAngle, selfHeight, radius,targetHeight):
-        C=math.sqrt((2*radius**2)-(2*radius**2)*math.cos(targetAngle-selfPosAngle))
-        phi=math.atan((targetHeight-selfHeight)/C)
+    def goAngleY(self, targetAngle,targetHeight):
+        C=math.sqrt((2*Globalradius**2)-(2*Globalradius**2)*math.cos(targetAngle-Globalangle))
+        phi=math.atan((targetHeight-Globalheight)/C)
+        phi=math.degrees(phi)
+        phi=-phi
         self.goAngle(phi)
+    
+    
     
     # Set the motor zero point
     def zero(self):
