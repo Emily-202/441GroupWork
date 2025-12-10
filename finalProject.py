@@ -31,7 +31,7 @@ def load_target_data(url="http://192.168.1.254:8000/positions.json"):
         return {}
 """
 
-def load_target_data(local_filename="positions.json"):
+def load_target_data(local_filename="targets.json"):
     script_dir = os.path.dirname(os.path.abspath(__file__))
     local_path = os.path.join(script_dir, local_filename)
 
