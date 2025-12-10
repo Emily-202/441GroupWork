@@ -32,7 +32,6 @@ def load_target_data(url="http://192.168.1.254:8000/positions.json"):
             return json.load(response)
     except Exception as e:
         print("Error loading JSON from URL:", e)
-        """
         # Fallback: try loading local file
         try:
             with open("targets.json", "r") as f:
@@ -40,7 +39,6 @@ def load_target_data(url="http://192.168.1.254:8000/positions.json"):
         except Exception as e:
             print("Error loading local JSON:", e)
             return {}
-        """
         return {}
 
 
