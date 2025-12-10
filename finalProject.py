@@ -727,7 +727,12 @@ class Stepper:
         phi=math.degrees(phi)
         phi=-phi
         self.goAngle(phi)
-    
+    def hoizontalZero(self):
+        theta=math.atan2(Globalheight,Globalradius)
+        theta=math.degrees(theta)
+        p = multiprocessing.Process(target=self.__rotate, args=(theta,))
+        p.start()
+        p.join()
     
     
     # Set the motor zero point
