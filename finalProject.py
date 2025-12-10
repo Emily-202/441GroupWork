@@ -33,16 +33,12 @@ def load_target_data(url="http://192.168.1.254:8000/positions.json"):
     except Exception as e:
         print("Error loading JSON from URL:", e)
         """
-        local_filename="targets.json"
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        local_path = os.path.join(script_dir, local_filename)
-
+        # Fallback: try loading local file
         try:
-            with open(local_path, "r") as f:
-                print(f"Loaded local JSON file: {local_path}")
+            with open("targets.json", "r") as f:
                 return json.load(f)
         except Exception as e:
-            print(f"Error loading local JSON file '{local_path}':", e)
+            print("Error loading local JSON:", e)
             return {}
         """
         return {}
@@ -763,4 +759,8 @@ if __name__ == "__main__":
     StepperHandler.motor_laser = m2
     StepperHandler.motor_bed = m1
 
-    runServer()
+    try: 
+        runServer()
+    except Exception as e:
+        print("Error running server:", e)
+        GPIO.cleanup()
