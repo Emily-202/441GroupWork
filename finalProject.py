@@ -18,7 +18,7 @@ GPIO.setup(laserpin, GPIO.OUT)
 GPIO.output(laserpin, GPIO.LOW)
 
 ## Global Variables ------------------------------------------------------------------
-Globalradius=0
+Globalradius=300
 Globalangle=0
 Globalheight=20.955
 
