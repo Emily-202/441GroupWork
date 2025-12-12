@@ -404,7 +404,7 @@ def generateHTML():
             (data.globes || []).forEach(g => {{
                 sequence.push({{
                     bed: g.theta * 180 / Math.PI,
-                    laser: g.z  // already in degrees?
+                    laser: g.z
                 }});
             }});
 
