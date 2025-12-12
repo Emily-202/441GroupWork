@@ -276,6 +276,15 @@ def generateHTML():
             await sendValue("bedRotation", bedDeg);
             await sendValue("laserRotation", laserDeg);
             updateOrientationDisplay();
+
+            // Turn laser ON
+            await fetch('/toggleLaser', {{ method: 'POST' }});
+
+            // Wait 3 seconds
+            await new Promise(res => setTimeout(res, 3000));
+
+            // Turn laser OFF
+            await fetch('/toggleLaser', {{ method: 'POST' }});
         }}
 
         // Store robot position in JS (absolute angles)
@@ -418,7 +427,7 @@ def generateHTML():
                 // Turn laser OFF
                 await fetch('/toggleLaser', {{ method: 'POST' }});
 
-                // Small pause before next target (optional)
+                // Small pause before next target
                 await new Promise(res => setTimeout(res, 500));
             }}
 
