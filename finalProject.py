@@ -727,7 +727,7 @@ class Stepper:
         self.goAngle(alpha)
    # moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
-        C=math.sqrt((2*Globalradius**2)-(2*Globalradius**2)*math.cos(targetAngle-Globalangle))
+        C=2*math.sin((targetAngle-Globalangle)/2)*Globalradius
         phi=math.atan((targetHeight-Globalheight)/C)
         phi=math.degrees(phi)
         phi=-phi
