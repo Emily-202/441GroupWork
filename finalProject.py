@@ -134,12 +134,12 @@ def generateHTML():
 
             <div>
                 <p>
-                    <label for="bedRotation">Bed Position [-90 and 90]:</label>
-                    <input type="number" id="bedRotation" min="-90" max="90" value="{bedRotation['A']}"><br><br>
+                    <label for="bedRotation">Bed Position [-80 and 80]:</label>
+                    <input type="number" id="bedRotation" min="-80" max="80" value="{bedRotation['A']}"><br><br>
                 </p>
                 <p>
-                    <label for="laserRotation">Laser Position [-90 and 90]:</label>
-                    <input type="number" id="laserRotation" min="-90" max="90" value="{laserRotation['B']}"><br><br>
+                    <label for="laserRotation">Laser Position [-80 and 80]:</label>
+                    <input type="number" id="laserRotation" min="-80" max="80" value="{laserRotation['B']}"><br><br>
                 </p>
                 <input type="button" value="Move" onclick="moveMotors();">
                 <input type="button" value="Zero Positions" onclick="zeroMotors();">
@@ -376,6 +376,55 @@ def generateHTML():
             alert(`Robot position set to Turret ${{id}}.\nBed=${{bedDeg.toFixed(1)}}°, Laser=0°`);
         }}
         
+        async function startTrial() {{
+            // Load all turret and globe positions
+            const data = await (await fetch('/targets')).json();
+
+            // Build one combined list: [ {{bedDeg:x, laserDeg:y}}, ... ]
+            let sequence = [];
+
+            // ====== Add turrets ======
+            for (const [id, vals] of Object.entries(data.turrets || {{}})) {{
+                sequence.push({{
+                    bed: vals.theta * 180 / Math.PI,
+                    laser: 0
+                }});
+            }}
+
+            // ====== Add globes ======
+            (data.globes || []).forEach(g => {{
+                sequence.push({{
+                    bed: g.theta * 180 / Math.PI,
+                    laser: g.z  // already in degrees?
+                }});
+            }});
+
+            // ====== RUN AUTONOMOUS TRIAL ======
+            for (let i = 0; i < sequence.length; i++) {{
+                const target = sequence[i];
+                console.log(`Moving to target ${{i+1}}/${{sequence.length}}`);
+
+                // Move motors
+                await sendValue("bedRotation", target.bed);
+                await sendValue("laserRotation", target.laser);
+                updateOrientationDisplay();
+
+                // Turn laser ON
+                await fetch('/toggleLaser', {{ method: 'POST' }});
+
+                // Wait 3 seconds
+                await new Promise(res => setTimeout(res, 3000));
+
+                // Turn laser OFF
+                await fetch('/toggleLaser', {{ method: 'POST' }});
+
+                // Small pause before next target (optional)
+                await new Promise(res => setTimeout(res, 500));
+            }}
+
+            alert("Autonomous trial complete.");
+        }}
+
 
         loadTargets();
         updateOrientationDisplay();
