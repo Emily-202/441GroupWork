@@ -491,7 +491,7 @@ class StepperHandler(BaseHTTPRequestHandler):
 
             try:
                 Globalangle = float(parsed.get("theta", [0])[0])
-                Globalradius = float(parsed.get("r", [0])[0])
+                Globalradius = 300
                 print(f"Robot position set: angle={Globalangle}, radius={Globalradius}")
             except:
                 print("Invalid robot position POST")
