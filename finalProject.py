@@ -20,7 +20,7 @@ GPIO.output(laserpin, GPIO.LOW)
 ## Global Variables ------------------------------------------------------------------
 Globalradius=0
 Globalangle=0
-Globalheight=10.955
+Globalheight=20.955
 
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
@@ -720,7 +720,7 @@ class Stepper:
     # moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero   
    
     def goAngleXZ(self, targetAngle):
-        alpha=.5*(2*math.pi-abs(targetAngle-Globalangle))
+        alpha=.5*(math.pi-abs(targetAngle-Globalangle))
         alpha=math.degrees(alpha)
         if (targetAngle-Globalangle <0):
             alpha=-alpha
