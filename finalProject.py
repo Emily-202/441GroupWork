@@ -589,9 +589,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 target_theta_rad = globe["theta"]
                 self.motor_bed.goAngleXZ(target_theta_rad, robot_bed_deg)
                 #comment changed robot_bed_degree to no longer convert to radians 
-                GPIO.output(laserpin, GPIO.HIGH)
-                time.sleep(3)
-                GPIO.output(laserpin, GPIO.LOW)
+                
                 # Laser angle: move in Y plane (height difference)
                 target_z = globe.get("z", 0)
                 radius = 1.0  # Replace with actual radius if known
@@ -602,9 +600,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                     radius,
                     target_z
                 )
-                GPIO.output(laserpin, GPIO.HIGH)
-                time.sleep(3)
-                GPIO.output(laserpin, GPIO.LOW)
+                
                 # For UI feedback, convert target_theta_rad to degrees
                 bed_angle_deg = math.degrees(target_theta_rad)
                 laser_angle_deg = target_z
