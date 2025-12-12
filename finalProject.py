@@ -582,10 +582,10 @@ class StepperHandler(BaseHTTPRequestHandler):
                     target_z = 0
 
                     self.motor_bed.goAngleXZ(target_theta)
-                    self.motor_laser.goAngleY(target_theta, target_z)
+                    self.motor_laser.goAngleY(target_theta,target_z)
 
                     bed_angle_deg = math.degrees(target_theta)
-                    laser_angle_deg = "computed"
+                    laser_angle_deg = 0
                 else:
                     self._send_json({"success": False, "message": "Turret not found"})
                     return
