@@ -705,10 +705,10 @@ class Stepper:
             curAngle = self.angle.value
 
         # shortest path math: force into [-180, 180]
-        if (tarAngle>90):
-            tarAngle=90
-        elif (tarAngle<-90):
-            tarAngle=-90
+        if (tarAngle>80):
+            tarAngle=80
+        elif (tarAngle<-80):
+            tarAngle=-80
         delta = ((tarAngle - curAngle + 540) % 360) - 180
         #delta = tarAngle - curAngle    
         
