@@ -9,9 +9,6 @@ from RPi import GPIO
 
 ## GPIO Setup ------------------------------------------------------------------------
 GPIO.setmode(GPIO.BCM)
-GPIO.cleanup()
-time.sleep(1)
-GPIO.setmode(GPIO.BCM)
 time.sleep(1)
 laserpin=23
 GPIO.setup(laserpin, GPIO.OUT)
