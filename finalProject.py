@@ -816,7 +816,7 @@ class Stepper:
             print("[AngleY] Target inline with robot — skipping Y motion")
             return
 
-        phi=math.atan2((targetHeight-Globalheight)/C)
+        phi=math.atan2((targetHeight-Globalheight),C)
         phi=math.degrees(phi)
         phi=-phi
         self.goAngle(phi)
