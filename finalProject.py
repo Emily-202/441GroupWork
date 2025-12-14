@@ -248,76 +248,50 @@ def generateHTML():
 
         async function moveToTarget() {{
             const selected = document.getElementById('targetSelector').value;
-            if (!selected) return alert("Please select a target first.");
-
-            const data = await (await fetch('/targets')).json();
-
-            const R = 300;            // circle radius (cm)
-            const laserHeight = 20.955;
-
-            let bedDeg = 0;
-            let laserDeg = 0;
-
-            // Robot assumed at angle = 0 (as per current UI behavior)
-            const robotTheta = 0;
-
-            if (selected.startsWith('turret_')) {{
-                const id = selected.split('_')[1];
-                const t = data.turrets[id];
-                if (!t) return alert("Invalid turret data.");
-
-                const targetTheta = t.theta;
-                const targetHeight = 0;
-
-                const dTheta = targetTheta - robotTheta;
-                const C = 2 * R * Math.sin(dTheta / 2);
-
-                let phi = 0;
-                if (Math.abs(C) > 1e-6) {{
-                    phi = -Math.atan2(targetHeight - laserHeight, C);
-                }}
-
-                bedDeg = (targetTheta * 180 / Math.PI).toFixed(1);
-                laserDeg = (phi * 180 / Math.PI).toFixed(1);
+            if (!selected) {{
+                alert("Please select a target first.");
+                return;
             }}
 
-            else if (selected.startsWith('globe_')) {{
-                const id = parseInt(selected.split('_')[1]) - 1;
-                const g = data.globes[id];
-                if (!g) return alert("Invalid globe data.");
+            // Current robot orientation from UI
+            const bed = document.getElementById('bedRotation').value;
+            const laser = document.getElementById('laserRotation').value;
 
-                const targetTheta = g.theta;
-                const targetHeight = g.z;
+            const body = new URLSearchParams();
+            body.append("chosenTarget", selected);
+            body.append("robotPosition", `${{bed}},${{laser}}`);
 
-                const dTheta = targetTheta - robotTheta;
-                const C = 2 * R * Math.sin(dTheta / 2);
+            let result;
 
-                let phi = 0;
-                if (Math.abs(C) > 1e-6) {{
-                    phi = -Math.atan2(targetHeight - laserHeight, C);
-                }}
-
-                bedDeg = (targetTheta * 180 / Math.PI).toFixed(1);
-                laserDeg = (phi * 180 / Math.PI).toFixed(1);
+            try {{
+                const response = await fetch('/moveToTarget', {{
+                    method: 'POST',
+                    headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
+                    body
+                }});
+                result = await response.json();
+            }} catch (err) {{
+                console.error("Move request failed:", err);
+                alert("Failed to send move command.");
+                return;
+            }}
+            if (!result.success) {{
+                alert(result.message || "Move failed.");
+                return;
             }}
 
-            // Apply limits
-            bedDeg = Math.max(-80, Math.min(80, bedDeg));
-            laserDeg = Math.max(-80, Math.min(80, laserDeg));
-
-            document.getElementById('bedRotation').value = bedDeg;
-            document.getElementById('laserRotation').value = laserDeg;
+            // document.getElementById('bedRotation').value = bedDeg;
+            // document.getElementById('laserRotation').value = laserDeg;
+            document.getElementById('bedRotation').value = result.bed.toFixed(1);
+            document.getElementById('laserRotation').value = result.laser.toFixed(1);
 
             await sendValue("bedRotation", bedDeg);
             await sendValue("laserRotation", laserDeg);
             updateOrientationDisplay();
 
-            // Laser ON
+            // Laser ON (3 sec) then OFF
             await fetch('/toggleLaser', {{ method: 'POST' }});
-
             await new Promise(r => setTimeout(r, 3000));
-
-            // Laser OFF
             await fetch('/toggleLaser', {{ method: 'POST' }});
         }}
 
