@@ -375,13 +375,14 @@ def generateHTML():
 
             // Convert to degrees (absolute)
             const bedDeg = turret.theta * 180 / Math.PI;
+            const bedRad = turret.theta;
             const laserDeg = 0;  // Always zero when robot is at a turret
 
             try {{
                 let response = await fetch('/setRobotPosition', {{
                     method: "POST",
                     headers: {{ "Content-Type": "application/x-www-form-urlencoded" }},
-                    body: `bed=${{bedDeg}}&laser=${{laserDeg}}`
+                    body: `bed=${{bedRad}}&laser=${{laserDeg}}`
                 }});
 
                 const result = await response.json();
@@ -498,7 +499,7 @@ class StepperHandler(BaseHTTPRequestHandler):
             global Globalangle, Globalradius
 
             try:
-                Globalangle = float(parsed.get("theta", [0])[0])
+                Globalangle = float(parsed.get("bed", [0])[0])
                 Globalradius = 300
                 print(f"Robot position set: angle={Globalangle}, radius={Globalradius}")
             except:
@@ -533,13 +534,26 @@ class StepperHandler(BaseHTTPRequestHandler):
 
             data = load_target_data()
             if target_name.startswith('turret_'):
-                tid = target_name.split('_')[1]
-                t = data.get('turrets', {}).get(tid)
-                if t:
-                    # respond with a descriptive text
-                    msg = f"Turret {tid}: r={t.get('r')}, theta={t.get('theta')}"
-                else:
-                    msg = "Turret not found."
+                tid = target_name.split("_")[1]
+                turret = data.get("turrets", {}).get(tid)
+                if not turret:
+                    self._send_json({"success": False, "message": "Turret not found"})
+                    return
+                target_theta = turret["theta"]
+
+                bed_angle_deg = math.degrees(target_theta)
+                laser_angle_deg = math.degrees(
+                    math.atan2(-Globalheight,
+                            2 * Globalradius * math.sin((target_theta - Globalangle) / 2))
+                )
+
+                self._send_json({
+                    "success": True,
+                    "bed": bed_angle_deg,
+                    "laser": laser_angle_deg
+                })
+                return
+
             elif target_name.startswith('globe_'):
                 gid = int(target_name.split('_')[1]) - 1
                 try:
@@ -611,7 +625,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 # --- Use Stepper movement system formulas ---
                 # Bed angle: move in XZ plane (2D angular displacement)
                 target_theta_rad = globe["theta"]
-                self.motor_bed.goAngleXZ(target_theta_rad, robot_bed_deg)
+                self.motor_bed.goAngleXZ(target_theta_rad)
                 #comment changed robot_bed_degree to no longer convert to radians 
                 
                 # Laser angle: move in Y plane (height difference)
