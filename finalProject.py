@@ -21,7 +21,6 @@ GPIO.output(laserpin, GPIO.LOW)
 Globalradius=300
 Globalangle=0
 Globalheight=20.955
-Globalturrettarget=0
 
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
@@ -580,7 +579,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 turret = data.get("turrets", {}).get(tid)
                 if turret:
                     target_theta = turret["theta"]
-                    target_z = -Globalheight
+                    target_z = 0
 
                     self.motor_bed.goAngleXZ(target_theta)
                     self.motor_laser.goAngleY(target_theta,target_z)
