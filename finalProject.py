@@ -285,8 +285,8 @@ def generateHTML():
             document.getElementById('bedRotation').value = result.bed.toFixed(1);
             document.getElementById('laserRotation').value = result.laser.toFixed(1);
 
-            await sendValue("bedRotation", bedDeg);
-            await sendValue("laserRotation", laserDeg);
+            // await sendValue("bedRotation", bedDeg);
+            // await sendValue("laserRotation", laserDeg);
             updateOrientationDisplay();
 
             // Laser ON (3 sec) then OFF
