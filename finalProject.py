@@ -617,7 +617,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 if turret:
                     target_theta = turret["theta"]
                     # target_z = 20.955
-                    target_z = 21
+                    target_z = 0
 
                     self.motor_bed.goAngleXZ(target_theta)
                     self.motor_laser.goAngleY(target_theta,target_z)
