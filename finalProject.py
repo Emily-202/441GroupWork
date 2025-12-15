@@ -247,10 +247,13 @@ def generateHTML():
         }}
 
         /* ================= CONSTANTS ================= */
-        const R = 300;                // cm (600 cm diameter)
-        const LASER_H = 20.955;       // cm
+        const R = 300;          // cm
+        const LASER_H = 20.955;
         const MIN = -80;
         const MAX = 80;
+
+        /* ================= ROBOT STATE ================= */
+        let robotTheta = 0;    // radians (UPDATED when robot position is set)
 
         /* ================= HELPERS ================= */
         function clamp(v,min,max){{ return Math.max(min,Math.min(max,v)); }}
@@ -318,46 +321,44 @@ def generateHTML():
             await fetch('/toggleLaser', {{ method: 'POST' }}); */
 
             // New Code --------------------------------------------------
-            const selected = document.getElementById('targetSelector').value;
-            if (!selected) return alert("Select a target");
+            const sel = document.getElementById("targetSelector").value;
+            if(!sel) return alert("Select target");
 
-            const data = await (await fetch('/targets')).json();
+            const data = await (await fetch("/targets")).json();
 
             let bedDeg = 0;
             let laserDeg = 0;
 
-            if (selected.startsWith("turret_")) {{
-                const id = selected.split("_")[1];
+            if(sel.startsWith("turret_")){{
+                const id = sel.split("_")[1];
                 const t = data.turrets[id];
-                if (!t) return alert("Invalid turret");
 
-                // ✅ shortest angular separation
-                const dTheta = shortestAngleRad(t.theta);
+                // ✅ TRUE ANGULAR SEPARATION
+                const dTheta = shortestAngleRad(t.theta - robotTheta);
 
                 bedDeg = clamp(dTheta * 180 / Math.PI, MIN, MAX);
                 laserDeg = clamp(laserAngle(dTheta, 0), MIN, MAX);
             }}
 
-            else if (selected.startsWith("globe_")) {{
-                const id = parseInt(selected.split("_")[1]) - 1;
+            else if(sel.startsWith("globe_")){{
+                const id = parseInt(sel.split("_")[1]) - 1;
                 const g = data.globes[id];
-                if (!g) return alert("Invalid globe");
 
-                const dTheta = shortestAngleRad(g.theta);
+                const dTheta = shortestAngleRad(g.theta - robotTheta);
 
                 bedDeg = clamp(dTheta * 180 / Math.PI, MIN, MAX);
                 laserDeg = clamp(laserAngle(dTheta, g.z), MIN, MAX);
             }}
 
-            document.getElementById('bedRotation').value = bedDeg.toFixed(1);
-            document.getElementById('laserRotation').value = laserDeg.toFixed(1);
+            document.getElementById("bedRotation").value = bedDeg.toFixed(1);
+            document.getElementById("laserRotation").value = laserDeg.toFixed(1);
 
             await sendValue("bedRotation", bedDeg);
             await sendValue("laserRotation", laserDeg);
 
-            await fetch('/toggleLaser', {{ method: 'POST' }});
-            await new Promise(res => setTimeout(res, 3000));
-            await fetch('/toggleLaser', {{ method: 'POST' }});
+            await fetch("/toggleLaser",{{method:"POST"}});
+            await new Promise(r=>setTimeout(r,3000));
+            await fetch("/toggleLaser",{{method:"POST"}});
         }}
 
 
@@ -870,11 +871,20 @@ class Stepper:
     
     # moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero   
     def goAngleXZ(self, targetAngle):
+        """
         alpha=.5*(math.pi-abs(targetAngle-Globalangle))
         alpha=math.degrees(alpha)
         if (targetAngle-Globalangle <0):
             alpha=-alpha
         self.goAngle(alpha)
+        """
+        dtheta = (targetAngle - Globalangle + math.pi) % (2 * math.pi) - math.pi
+
+        dtheta_deg = math.degrees(dtheta)
+
+        print(f"[XZ] Rotating bed by {dtheta_deg:.1f}°")
+
+        self.goAngle(dtheta_deg)
     
     # moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
