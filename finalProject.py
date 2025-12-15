@@ -247,7 +247,7 @@ def generateHTML():
         }}
 
         async function moveToTarget() {{
-            const selected = document.getElementById('targetSelector').value;
+            /*const selected = document.getElementById('targetSelector').value;
             if (!selected) {{
                 alert("Please select a target first.");
                 return;
@@ -290,6 +290,80 @@ def generateHTML():
             updateOrientationDisplay();
 
             // Laser ON (3 sec) then OFF
+            await fetch('/toggleLaser', {{ method: 'POST' }});
+            await new Promise(r => setTimeout(r, 3000));
+            await fetch('/toggleLaser', {{ method: 'POST' }}); */
+
+            // New Code
+            const selected = document.getElementById('targetSelector').value;
+            if (!selected) return alert("Select a target.");
+
+            const data = await (await fetch('/targets')).json();
+
+            // ===== CONSTANTS =====
+            const R = 300;              // cm
+            const laserHeight = 20.955; // cm
+            const minDistance = 40;     // cm (near-field safety)
+            const robotTheta = 0;       // current UI assumption
+
+            let bedDeg = 0;
+            let laserDeg = 0;
+
+            if (selected.startsWith('turret_')) {{
+                const id = selected.split('_')[1];
+                const t = data.turrets[id];
+                if (!t) return alert("Invalid turret");
+
+                const targetTheta = t.theta;
+                const targetHeight = 0;
+
+                const dTheta = targetTheta - robotTheta;
+
+                // horizontal distance (safe for near-field)
+                const horizDist = Math.max(
+                    minDistance,
+                    Math.abs(2 * R * Math.sin(dTheta / 2))
+                );
+
+                const phi =
+                    -Math.atan2(targetHeight - laserHeight, horizDist);
+
+                bedDeg = targetTheta * 180 / Math.PI;
+                laserDeg = phi * 180 / Math.PI;
+            }}
+
+            else if (selected.startsWith('globe_')) {{
+                const id = parseInt(selected.split('_')[1]) - 1;
+                const g = data.globes[id];
+                if (!g) return alert("Invalid globe");
+
+                const targetTheta = g.theta;
+                const targetHeight = g.z;
+
+                const dTheta = targetTheta - robotTheta;
+
+                const horizDist = Math.max(
+                    minDistance,
+                    Math.abs(2 * R * Math.sin(dTheta / 2))
+                );
+
+                const phi =
+                    -Math.atan2(targetHeight - laserHeight, horizDist);
+
+                bedDeg = targetTheta * 180 / Math.PI;
+                laserDeg = phi * 180 / Math.PI;
+            }}
+
+            // Clamp to hardware limits
+            bedDeg = Math.max(-80, Math.min(80, bedDeg));
+            laserDeg = Math.max(-80, Math.min(80, laserDeg));
+
+            document.getElementById('bedRotation').value = bedDeg.toFixed(1);
+            document.getElementById('laserRotation').value = laserDeg.toFixed(1);
+
+            await sendValue("bedRotation", bedDeg);
+            await sendValue("laserRotation", laserDeg);
+
             await fetch('/toggleLaser', {{ method: 'POST' }});
             await new Promise(r => setTimeout(r, 3000));
             await fetch('/toggleLaser', {{ method: 'POST' }});
@@ -427,13 +501,9 @@ def generateHTML():
                 await sendValue("laserRotation", target.laser);
                 updateOrientationDisplay();
 
-                // Turn laser ON
+                // Turn laser ON (3 sec) then OFF
                 await fetch('/toggleLaser', {{ method: 'POST' }});
-
-                // Wait 3 seconds
                 await new Promise(res => setTimeout(res, 3000));
-
-                // Turn laser OFF
                 await fetch('/toggleLaser', {{ method: 'POST' }});
 
                 // Small pause before next target
