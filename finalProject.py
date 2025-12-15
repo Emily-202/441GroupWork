@@ -601,7 +601,15 @@ class StepperHandler(BaseHTTPRequestHandler):
                 turret = data.get("turrets", {}).get(tid)
                 if turret:
                     target_theta = turret["theta"]
-                    # target_z = 20.955
+                    
+                    # Calculating target_z for turret (always aiming at turret base)
+                    C = 2 * Globalradius * math.sin((target_theta - Globalangle) / 2)
+
+                    if abs(C) < 1e-6:
+                        print("[AngleY] Target inline with robot — skipping Y motion")
+                        return 0.0
+
+                    phi = math.degrees(math.atan2((targetHeight - Globalheight), C))
                     target_z = 0
 
                     self.motor_bed.goAngleXZ(target_theta)
@@ -809,7 +817,8 @@ class Stepper:
         self.goAngle(alpha)
    # moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
-        C=2*Globalradius*math.sin((targetAngle-Globalangle)/2)
+        # C=2*Globalradius*math.sin((targetAngle-Globalangle)/2)
+        C = Globalradius * (targetAngle - Globalangle)
 
         # Prevents division by zero
         if abs(C) < 1e-6:
