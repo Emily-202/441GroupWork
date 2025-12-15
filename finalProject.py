@@ -671,6 +671,9 @@ class StepperHandler(BaseHTTPRequestHandler):
             print(f"Commanding bed → {bed_angle_deg:.1f}°, laser → {laser_angle_deg:.1f}°")
 
             # return JSON response with final angles
+
+            bed_angle_deg = max(-80, min(80, bed_angle_deg))
+            laser_angle_deg = max(-80, min(80, laser_angle_deg))
             self._send_json({
                 "success": True,
                 "bed": bed_angle_deg,
