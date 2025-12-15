@@ -923,7 +923,7 @@ class Stepper:
         # Clamp to mechanical limits
         phi_deg = max(MIN, min(MAX, phi_deg))
 
-        return phi_deg
+        self.goAngle(phi_deg)
 
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
