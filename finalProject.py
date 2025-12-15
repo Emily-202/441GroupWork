@@ -669,7 +669,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 turret = data.get("turrets", {}).get(tid)
                 if turret:
                     target_theta = turret["theta"]
-                    target_z = 0  # Always aiming at base of turrets
+                    target_z = 1  # Always aiming at base of turrets
 
                     self.motor_bed.goAngleXZ(target_theta)
                     self.motor_laser.goAngleY(target_theta, target_z)
