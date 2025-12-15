@@ -634,7 +634,8 @@ class StepperHandler(BaseHTTPRequestHandler):
                 
                 # For UI feedback, convert target_theta_rad to degrees
                 bed_angle_deg = math.degrees(target_theta_rad)
-                laser_angle_deg = target_z
+                with self.motor_laser.angle.get_lock():
+                    laser_angle_deg = self.motor_laser.angle.value
 
             else:
                 self._send_json({"success": False, "message": "Unknown target"})
@@ -798,15 +799,16 @@ class Stepper:
         p = multiprocessing.Process(target=self.__rotate, args=(delta,))
         p.start()
         p.join()
+    
     # moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero   
-   
     def goAngleXZ(self, targetAngle):
         alpha=.5*(math.pi-abs(targetAngle-Globalangle))
         alpha=math.degrees(alpha)
         if (targetAngle-Globalangle <0):
             alpha=-alpha
         self.goAngle(alpha)
-   # moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero and circle radius our own height and target height     
+    
+    # moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
         C=2*Globalradius*math.sin((targetAngle-Globalangle)/2)
 
@@ -815,17 +817,22 @@ class Stepper:
             print("[AngleY] Target inline with robot — skipping Y motion")
             return
 
-        phi=math.atan2((targetHeight-Globalheight),C)
-        phi=math.degrees(phi)
+        phi = math.degrees(math.atan2(targetHeight - Globalheight, C))
+        with self.angle.get_lock():
+            currAngle = self.angle.value
+        delta = phi - currAngle
+
+        # phi=math.atan2((targetHeight-Globalheight),C)
+        # phi=math.degrees(phi)
         # phi=-phi
-        self.goAngle(phi)
+        self.goAngle(delta)
+
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
         theta=math.degrees(theta)
         p = multiprocessing.Process(target=self.__rotate, args=(theta,))
         p.start()
         p.join()
-    
     
     # Set the motor zero point
     def zero(self):
