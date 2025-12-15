@@ -904,33 +904,25 @@ class Stepper:
         self.goAngle(phi)
         """
 
-        # --- Constants ---
-        R = Globalradius           # cm
-        LASER_H = Globalheight     # cm
+        LASER_H = 20.955  # laser height
+        TARGET_H = 1      # turret height
         MIN = -80
         MAX = 80
 
-        # --- Angular separation (SIGNED, radians) ---
-        dTheta = (targetAngle - Globalangle + math.pi) % (2 * math.pi) - math.pi
+        # Horizontal distance along the chord
+        C = 2 * Globalradius * math.sin((targetAngle - Globalangle) / 2)
 
-        # --- Horizontal distance via chord length ---
-        C = max(2 * R * math.sin(abs(dTheta) / 2), 1e-6)
+        # Compute vertical angle
+        phi = math.atan2(TARGET_H - LASER_H, C)
+        phi_deg = math.degrees(phi)
 
-        # --- Vertical difference ---
-        dz = targetHeight - LASER_H
+        # Invert if needed (depends on motor direction)
+        phi_deg = -phi_deg
 
-        # --- Correct atan2 usage ---
-        angleDeg = math.degrees(math.atan2(dz, C))
+        # Clamp to mechanical limits
+        phi_deg = max(MIN, min(MAX, phi_deg))
 
-        # --- Clamp to mechanical limits ---
-        angleDeg = max(MIN, min(MAX, angleDeg))
-
-        print(
-            f"[Y] dTheta={math.degrees(dTheta):.1f}°, "
-            f"C={C:.1f}cm, dz={dz:.1f}cm → angle={angleDeg:.1f}°"
-        )
-
-        self.goAngle(angleDeg)
+        return phi_deg
 
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
