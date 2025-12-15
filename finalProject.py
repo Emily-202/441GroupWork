@@ -470,6 +470,10 @@ def runServer():
         GPIO.cleanup()
 
 
+## Extra Functions -------------------------------------------------------------------
+def normalize_deg(angle):
+    return ((angle + 180) % 360) - 180
+
 ## HTTP Request Handler --------------------------------------------------------------
 class StepperHandler(BaseHTTPRequestHandler):
 
@@ -604,11 +608,11 @@ class StepperHandler(BaseHTTPRequestHandler):
                     target_z = 0  # Always aiming at base of turrets
 
                     self.motor_bed.goAngleXZ(target_theta)
-                    self.motor_laser.goAngleY(target_theta,target_z)
+                    self.motor_laser.goAngleY(target_theta, target_z)
 
                     bed_angle_deg = math.degrees(target_theta)
                     with self.motor_laser.angle.get_lock():
-                        laser_angle_deg = self.motor_laser.angle.value
+                        laser_angle_deg = normalize_deg(self.motor_laser.angle.value)
                 else:
                     self._send_json({"success": False, "message": "Turret not found"})
                     return
