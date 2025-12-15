@@ -273,7 +273,7 @@ def generateHTML():
 
 
         async function moveToTarget() {{
-            /*const selected = document.getElementById('targetSelector').value;
+            const selected = document.getElementById('targetSelector').value;
             if (!selected) {{
                 alert("Please select a target first.");
                 return;
@@ -318,47 +318,7 @@ def generateHTML():
             // Laser ON (3 sec) then OFF
             await fetch('/toggleLaser', {{ method: 'POST' }});
             await new Promise(r => setTimeout(r, 3000));
-            await fetch('/toggleLaser', {{ method: 'POST' }}); */
-
-            // New Code --------------------------------------------------
-            const sel = document.getElementById("targetSelector").value;
-            if(!sel) return alert("Select target");
-
-            const data = await (await fetch("/targets")).json();
-
-            let bedDeg = 0;
-            let laserDeg = 0;
-
-            if(sel.startsWith("turret_")){{
-                const id = sel.split("_")[1];
-                const t = data.turrets[id];
-
-                // ✅ TRUE ANGULAR SEPARATION
-                const dTheta = shortestAngleRad(t.theta - robotTheta);
-
-                bedDeg = clamp(dTheta * 180 / Math.PI, MIN, MAX);
-                laserDeg = clamp(laserAngle(dTheta, 0), MIN, MAX);
-            }}
-
-            else if(sel.startsWith("globe_")){{
-                const id = parseInt(sel.split("_")[1]) - 1;
-                const g = data.globes[id];
-
-                const dTheta = shortestAngleRad(g.theta - robotTheta);
-
-                bedDeg = clamp(dTheta * 180 / Math.PI, MIN, MAX);
-                laserDeg = clamp(laserAngle(dTheta, g.z), MIN, MAX);
-            }}
-
-            document.getElementById("bedRotation").value = bedDeg.toFixed(1);
-            document.getElementById("laserRotation").value = laserDeg.toFixed(1);
-
-            // await sendValue("bedRotation", bedDeg);
-            // await sendValue("laserRotation", laserDeg);
-
-            await fetch("/toggleLaser",{{method:"POST"}});
-            await new Promise(r=>setTimeout(r,3000));
-            await fetch("/toggleLaser",{{method:"POST"}});
+            await fetch('/toggleLaser', {{ method: 'POST' }});
         }}
 
 
