@@ -246,23 +246,28 @@ def generateHTML():
             }}
         }}
 
-        const R = 300; // cm
+        const R = 300;               // circle radius in cm
+        const laserHeight = 20.955;  // laser height in cm
 
-        function normalizeAngle(rad) {{
-            return Math.atan2(Math.sin(rad), Math.cos(rad));
+        function wrapAngle(theta) {{
+            theta = Math.abs(theta);
+            return Math.min(theta, 2 * Math.PI - theta);
         }}
 
-        function angularDifference(targetTheta, robotTheta) {{
-            return normalizeAngle(targetTheta - robotTheta);
-        }}
+        // laser elevation depends ONLY on separation distance
+        function computeLaserAngleFromSeparation(dTheta, targetHeight) {{
+            dTheta = wrapAngle(dTheta);
 
-        function chordDistance(dTheta) {{
-            return 2 * R * Math.sin(Math.abs(dTheta) / 2);
-        }}
+            // chord distance between two perimeter points
+            const D = 2 * R * Math.sin(dTheta / 2);
+            const safeD = Math.max(D, 1e-6);
 
-        function computeLaserElevation(dTheta, robotZ, targetZ) {{
-            const D = Math.max(chordDistance(dTheta), 1e-6);
-            return Math.atan2(targetZ - robotZ, D) * 180 / Math.PI;
+            const phi = Math.atan2(
+                targetHeight - laserHeight,
+                safeD
+            );
+
+            return phi * 180 / Math.PI;
         }}
 
         async function moveToTarget() {{
@@ -314,67 +319,57 @@ def generateHTML():
             await fetch('/toggleLaser', {{ method: 'POST' }}); */
 
             // New Code --------------------------------------------------
-            async function moveToTarget() {{
-                const selected = document.getElementById('targetSelector').value;
-                if (!selected) return alert("Select a target");
+            const selected = document.getElementById('targetSelector').value;
+            if (!selected) return alert("Select a target");
 
-                const data = await (await fetch('/targets')).json();
+            const data = await (await fetch('/targets')).json();
 
-                // ✅ SAFE FALLBACKS (prevents crash)
-                const robotTheta =
-                    data.robot && typeof data.robot.theta === "number"
-                        ? data.robot.theta
-                        : 0;
+            // robot position COMES FROM SERVER
+            const robotTheta = data.robot.theta;
+            const robotZ = data.robot.z;
 
-                const robotZ =
-                    data.robot && typeof data.robot.z === "number"
-                        ? data.robot.z
-                        : 0;
+            let targetTheta = 0;
+            let targetZ = 0;
 
-                let targetTheta = 0;
-                let targetZ = 0;
+            if (selected.startsWith('turret_')) {{
+                const id = selected.split('_')[1];
+                const t = data.turrets[id];
+                if (!t) return alert("Invalid turret");
 
-                if (selected.startsWith('turret_')) {{
-                    const id = selected.split('_')[1];
-                    const t = data.turrets[id];
-                    if (!t) return alert("Invalid turret");
+                targetTheta = t.theta;
+                targetZ = 0;
+            }}
+            else if (selected.startsWith('globe_')) {{
+                const idx = parseInt(selected.split('_')[1], 10) - 1;
+                const g = data.globes[idx];
+                if (!g) return alert("Invalid globe");
 
-                    targetTheta = t.theta;
-                    targetZ = 0;
-                }}
-                else if (selected.startsWith('globe_')) {{
-                    const idx = parseInt(selected.split('_')[1], 10) - 1;
-                    const g = data.globes[idx];
-                    if (!g) return alert("Invalid globe");
+                targetTheta = g.theta;
+                targetZ = g.z;
+            }}
 
-                    targetTheta = g.theta;
-                    targetZ = g.z;
-                }}
+            // SHORTEST ANGLE FROM ROBOT TO TARGET
+            const dTheta = angularDifference(targetTheta, robotTheta);
 
-                // shortest signed angle
-                const dTheta = angularDifference(targetTheta, robotTheta);
+            // bed rotation
+            let bedDeg = dTheta * 180 / Math.PI;
 
-                // bed rotation
-                let bedDeg = dTheta * 180 / Math.PI;
+            // laser elevation
+            let laserDeg = computeLaserElevation(dTheta, robotZ, targetZ);
 
-                // laser elevation
-                let laserDeg = computeLaserElevation(dTheta, robotZ, targetZ);
+            // mechanical limits (unchanged)
+            bedDeg = Math.max(-80, Math.min(80, bedDeg));
+            laserDeg = Math.max(-80, Math.min(80, laserDeg));
 
-                // mechanical limits (unchanged)
-                bedDeg = Math.max(-80, Math.min(80, bedDeg));
-                laserDeg = Math.max(-80, Math.min(80, laserDeg));
+            document.getElementById('bedRotation').value = bedDeg.toFixed(1);
+            document.getElementById('laserRotation').value = laserDeg.toFixed(1);
 
-                document.getElementById('bedRotation').value = bedDeg.toFixed(1);
-                document.getElementById('laserRotation').value = laserDeg.toFixed(1);
+            await sendValue("bedRotation", bedDeg);
+            await sendValue("laserRotation", laserDeg);
 
-                console.log("Aiming:", {{ bedDeg, laserDeg }}); // debug, safe to remove
-
-                await sendValue("bedRotation", bedDeg);
-                await sendValue("laserRotation", laserDeg);
-
-                await fetch('/toggleLaser', {{ method: 'POST' }});
-                await new Promise(r => setTimeout(r, 3000));
-                await fetch('/toggleLaser', {{ method: 'POST' }});
+            await fetch('/toggleLaser', {{ method: 'POST' }});
+            await new Promise(r => setTimeout(r, 3000));
+            await fetch('/toggleLaser', {{ method: 'POST' }});
         }}
 
 
