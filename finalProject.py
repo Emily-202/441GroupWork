@@ -353,8 +353,8 @@ def generateHTML():
             document.getElementById("bedRotation").value = bedDeg.toFixed(1);
             document.getElementById("laserRotation").value = laserDeg.toFixed(1);
 
-            await sendValue("bedRotation", bedDeg);
-            await sendValue("laserRotation", laserDeg);
+            // await sendValue("bedRotation", bedDeg);
+            // await sendValue("laserRotation", laserDeg);
 
             await fetch("/toggleLaser",{{method:"POST"}});
             await new Promise(r=>setTimeout(r,3000));
@@ -535,8 +535,7 @@ def runServer():
 
 
 ## Extra Functions -------------------------------------------------------------------
-def normalize_deg(angle):
-    return ((angle + 180) % 360) - 180
+
 
 ## HTTP Request Handler --------------------------------------------------------------
 class StepperHandler(BaseHTTPRequestHandler):
