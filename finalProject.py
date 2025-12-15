@@ -246,29 +246,28 @@ def generateHTML():
             }}
         }}
 
-        const R = 300;               // circle radius in cm
-        const laserHeight = 20.955;  // laser height in cm
+        /* ================= CONSTANTS ================= */
+        const R = 300;                // cm (600 cm diameter)
+        const LASER_H = 20.955;       // cm
+        const MIN = -80;
+        const MAX = 80;
 
-        function wrapAngle(theta) {{
-            theta = Math.abs(theta);
-            return Math.min(theta, 2 * Math.PI - theta);
+        /* ================= HELPERS ================= */
+        function clamp(v,min,max){{ return Math.max(min,Math.min(max,v)); }}
+
+        function shortestAngleRad(theta){{
+            return (theta + Math.PI) % (2*Math.PI) - Math.PI;
         }}
 
-        // laser elevation depends ONLY on separation distance
-        function computeLaserAngleFromSeparation(dTheta, targetHeight) {{
-            dTheta = wrapAngle(dTheta);
-
-            // chord distance between two perimeter points
-            const D = 2 * R * Math.sin(dTheta / 2);
-            const safeD = Math.max(D, 1e-6);
-
-            const phi = Math.atan2(
-                targetHeight - laserHeight,
-                safeD
-            );
-
-            return phi * 180 / Math.PI;
+        function chordDistance(dTheta){{
+            return 2 * R * Math.sin(Math.abs(dTheta) / 2);
         }}
+
+        function laserAngle(dTheta, targetH){{
+            const D = Math.max(chordDistance(dTheta), 1e-6);
+            return Math.atan2(targetH - LASER_H, D) * 180 / Math.PI;
+        }}
+
 
         async function moveToTarget() {{
             /*const selected = document.getElementById('targetSelector').value;
@@ -327,32 +326,28 @@ def generateHTML():
             let bedDeg = 0;
             let laserDeg = 0;
 
-            if (selected.startsWith('turret_')) {{
-                const id = selected.split('_')[1];
+            if (selected.startsWith("turret_")) {{
+                const id = selected.split("_")[1];
                 const t = data.turrets[id];
                 if (!t) return alert("Invalid turret");
 
-                // Bed rotation = angular separation from robot
-                bedDeg = t.theta * 180 / Math.PI;
+                // ✅ shortest angular separation
+                const dTheta = shortestAngleRad(t.theta);
 
-                // Laser elevation uses ABSOLUTE bed rotation as separation
-                const dTheta = Math.abs(bedDeg) * Math.PI / 180;
-                laserDeg = computeLaserAngleFromSeparation(dTheta, 0);
+                bedDeg = clamp(dTheta * 180 / Math.PI, MIN, MAX);
+                laserDeg = clamp(laserAngle(dTheta, 0), MIN, MAX);
             }}
-            else if (selected.startsWith('globe_')) {{
-                const id = parseInt(selected.split('_')[1]) - 1;
+
+            else if (selected.startsWith("globe_")) {{
+                const id = parseInt(selected.split("_")[1]) - 1;
                 const g = data.globes[id];
                 if (!g) return alert("Invalid globe");
 
-                bedDeg = g.theta * 180 / Math.PI;
+                const dTheta = shortestAngleRad(g.theta);
 
-                const dTheta = Math.abs(bedDeg) * Math.PI / 180;
-                laserDeg = computeLaserAngleFromSeparation(dTheta, g.z);
+                bedDeg = clamp(dTheta * 180 / Math.PI, MIN, MAX);
+                laserDeg = clamp(laserAngle(dTheta, g.z), MIN, MAX);
             }}
-
-            // mechanical limits
-            bedDeg = Math.max(-80, Math.min(80, bedDeg));
-            laserDeg = Math.max(-80, Math.min(80, laserDeg));
 
             document.getElementById('bedRotation').value = bedDeg.toFixed(1);
             document.getElementById('laserRotation').value = laserDeg.toFixed(1);
@@ -360,9 +355,8 @@ def generateHTML():
             await sendValue("bedRotation", bedDeg);
             await sendValue("laserRotation", laserDeg);
 
-            // turn laser on/off
             await fetch('/toggleLaser', {{ method: 'POST' }});
-            await new Promise(r => setTimeout(r, 3000));
+            await new Promise(res => setTimeout(res, 3000));
             await fetch('/toggleLaser', {{ method: 'POST' }});
         }}
 
