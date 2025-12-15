@@ -914,7 +914,7 @@ class Stepper:
         horizontalDist = max(2 * R * math.sin(dTheta / 2), 1e-6)
 
         # Vertical aiming angle in degrees
-        angleDeg = math.degrees(math.atan2(targetHeight - LASER_H, horizontalDist))
+        angleDeg = math.degrees(math.atan2(horizontalDist, targetHeight - LASER_H))
 
         # Clamp to mechanical limits
         angleDeg = max(MIN, min(MAX, angleDeg))
