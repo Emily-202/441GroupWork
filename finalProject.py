@@ -832,24 +832,11 @@ class Stepper:
     # moves the motor in the XZ when given our angular position with respect to the center
     # and zero and a targets angular position with respect to the center 
     def goAngleXZ(self, targetAngle):
-        """
         alpha=.5*(math.pi-abs(targetAngle-Globalangle))
         alpha=math.degrees(alpha)
         if (targetAngle-Globalangle <0):
             alpha=-alpha
         self.goAngle(alpha)
-        """
-        # Compute relative angle from robot's position
-        # targetAngle and Globalangle are in radians
-        bed_angle_rad = targetAngle - Globalangle  # relative rotation
-        # Convert to degrees
-        bed_angle_deg = math.degrees(bed_angle_rad)
-        # Wrap into [-180, 180]
-        bed_angle_deg = (bed_angle_deg + 180) % 360 - 180
-        # Clamp to mechanical limits [-80, 80]
-        bed_angle_deg = max(-80, min(80, bed_angle_deg))
-        print(f"[XZ] Rotating bed to {bed_angle_deg:.1f}°")
-        self.goAngle(bed_angle_deg)
     
     # moves the motor in the Y when given our angular position with respect to the center
     # and zero and a targets angular position with respect to the center
@@ -871,23 +858,18 @@ class Stepper:
         self.goAngle(phi)
         """
 
-        LASER_H = 20.955  # laser height
-        TARGET_H = 1      # turret height
-        MIN = -20
-        MAX = 20
-
         # Horizontal distance along the chord
         C = 2 * Globalradius * math.sin((targetAngle - Globalangle) / 2)
 
         # Compute vertical angle
-        phi = math.atan2(TARGET_H - LASER_H, C)
+        phi = math.atan2(targetHeight - Globalheight, C)
         phi_deg = math.degrees(phi)
 
         # Invert if needed (depends on motor direction)
         phi_deg = -phi_deg
 
         # Clamp to mechanical limits
-        phi_deg = max(MIN, min(MAX, phi_deg))
+        phi_deg = max(-80, min(80, phi_deg))
 
         self.goAngle(phi_deg)
 
