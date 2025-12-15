@@ -246,6 +246,30 @@ def generateHTML():
             }}
         }}
 
+        const R = 300;               // cm
+        const laserHeight = 20.955;  // cm
+
+        function wrapAngle(theta) {{
+            theta = Math.abs(theta);
+            return Math.min(theta, 2 * Math.PI - theta);
+        }}
+
+        // laser elevation depends ONLY on separation distance
+        function computeLaserAngleFromSeparation(dTheta, targetHeight) {{
+            dTheta = wrapAngle(dTheta);
+
+            // chord distance between two perimeter points
+            const D = 2 * R * Math.sin(dTheta / 2);
+            const safeD = Math.max(D, 1e-6);
+
+            const phi = Math.atan2(
+                targetHeight - laserHeight,
+                safeD
+            );
+
+            return phi * 180 / Math.PI;
+        }}
+
         async function moveToTarget() {{
             /*const selected = document.getElementById('targetSelector').value;
             if (!selected) {{
@@ -296,57 +320,37 @@ def generateHTML():
 
             // New Code
             const selected = document.getElementById('targetSelector').value;
-            if (!selected) return alert("Select a target.");
+            if (!selected) return alert("Select a target");
 
             const data = await (await fetch('/targets')).json();
-
-            // ===== Physical constants =====
-            const R = 300;               // cm (circle radius)
-            const laserHeight = 20.955;  // cm
-            const robotTheta = 0;        // unknown absolute → treated as reference
 
             let bedDeg = 0;
             let laserDeg = 0;
 
-            function computeLaserAngle(targetTheta, targetHeight) {{
-                let dTheta = Math.abs(targetTheta - robotTheta);
-
-                // wrap angular separation into [0, π]
-                dTheta = Math.min(dTheta, 2 * Math.PI - dTheta);
-
-                // chord distance between two points on circle
-                const D = 2 * R * Math.sin(dTheta / 2);
-
-                // avoid singularity without lying about distance
-                const safeD = Math.max(D, 1e-6);
-
-                const phi = Math.atan2(
-                    targetHeight - laserHeight,
-                    safeD
-                );
-
-                return phi * 180 / Math.PI;
-            }}
-
             if (selected.startsWith('turret_')) {{
                 const id = selected.split('_')[1];
                 const t = data.turrets[id];
-                if (!t) return alert("Invalid turret.");
+                if (!t) return alert("Invalid turret");
 
-                bedDeg = t.theta * 180 / Math.PI;
-                laserDeg = computeLaserAngle(t.theta, 0);
+                // angular separation between robot and turret
+                const dTheta = t.theta;
+
+                bedDeg = dTheta * 180 / Math.PI;
+                laserDeg = computeLaserAngleFromSeparation(dTheta, 0);
             }}
 
             else if (selected.startsWith('globe_')) {{
                 const id = parseInt(selected.split('_')[1]) - 1;
                 const g = data.globes[id];
-                if (!g) return alert("Invalid globe.");
+                if (!g) return alert("Invalid globe");
 
-                bedDeg = g.theta * 180 / Math.PI;
-                laserDeg = computeLaserAngle(g.theta, g.z);
+                const dTheta = g.theta;
+
+                bedDeg = dTheta * 180 / Math.PI;
+                laserDeg = computeLaserAngleFromSeparation(dTheta, g.z);
             }}
 
-            // Clamp to mechanical limits
+            // mechanical limits
             bedDeg = Math.max(-80, Math.min(80, bedDeg));
             laserDeg = Math.max(-80, Math.min(80, laserDeg));
 
@@ -360,7 +364,7 @@ def generateHTML():
             await new Promise(r => setTimeout(r, 3000));
             await fetch('/toggleLaser', {{ method: 'POST' }});
         }}
-        
+
 
         // Store robot position in JS (absolute angles)
         let robotPosition = {{
