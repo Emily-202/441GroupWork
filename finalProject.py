@@ -671,7 +671,6 @@ class StepperHandler(BaseHTTPRequestHandler):
             print(f"Commanding bed → {bed_angle_deg:.1f}°, laser → {laser_angle_deg:.1f}°")
 
             # return JSON response with final angles
-
             bed_angle_deg = max(-80, min(80, bed_angle_deg))
             laser_angle_deg = max(-80, min(80, laser_angle_deg))
             self._send_json({
@@ -840,13 +839,17 @@ class Stepper:
             alpha=-alpha
         self.goAngle(alpha)
         """
-        dtheta = (targetAngle - Globalangle + math.pi) % (2 * math.pi) - math.pi
-
-        dtheta_deg = math.degrees(dtheta)
-
-        print(f"[XZ] Rotating bed by {dtheta_deg:.1f}°")
-
-        self.goAngle(dtheta_deg)
+        # Compute relative angle from robot's position
+        # targetAngle and Globalangle are in radians
+        bed_angle_rad = targetAngle - Globalangle  # relative rotation
+        # Convert to degrees
+        bed_angle_deg = math.degrees(bed_angle_rad)
+        # Wrap into [-180, 180]
+        bed_angle_deg = (bed_angle_deg + 180) % 360 - 180
+        # Clamp to mechanical limits [-80, 80]
+        bed_angle_deg = max(-80, min(80, bed_angle_deg))
+        print(f"[XZ] Rotating bed to {bed_angle_deg:.1f}°")
+        self.goAngle(bed_angle_deg)
     
     # moves the motor in the Y when given our angular position with respect to the center
     # and zero and a targets angular position with respect to the center
