@@ -246,7 +246,7 @@ def generateHTML():
             }}
         }}
 
-        const R = 300; // radius in cm
+        const R = 300; // cm
 
         function normalizeAngle(rad) {{
             return Math.atan2(Math.sin(rad), Math.cos(rad));
@@ -314,57 +314,67 @@ def generateHTML():
             await fetch('/toggleLaser', {{ method: 'POST' }}); */
 
             // New Code --------------------------------------------------
-            const selected = document.getElementById('targetSelector').value;
-            if (!selected) return alert("Select a target");
+            async function moveToTarget() {{
+                const selected = document.getElementById('targetSelector').value;
+                if (!selected) return alert("Select a target");
 
-            const data = await (await fetch('/targets')).json();
+                const data = await (await fetch('/targets')).json();
 
-            // robot position COMES FROM SERVER
-            const robotTheta = data.robot.theta;
-            const robotZ = data.robot.z;
+                // ✅ SAFE FALLBACKS (prevents crash)
+                const robotTheta =
+                    data.robot && typeof data.robot.theta === "number"
+                        ? data.robot.theta
+                        : 0;
 
-            let targetTheta = 0;
-            let targetZ = 0;
+                const robotZ =
+                    data.robot && typeof data.robot.z === "number"
+                        ? data.robot.z
+                        : 0;
 
-            if (selected.startsWith('turret_')) {{
-                const id = selected.split('_')[1];
-                const t = data.turrets[id];
-                if (!t) return alert("Invalid turret");
+                let targetTheta = 0;
+                let targetZ = 0;
 
-                targetTheta = t.theta;
-                targetZ = 0;
-            }}
-            else if (selected.startsWith('globe_')) {{
-                const idx = parseInt(selected.split('_')[1], 10) - 1;
-                const g = data.globes[idx];
-                if (!g) return alert("Invalid globe");
+                if (selected.startsWith('turret_')) {{
+                    const id = selected.split('_')[1];
+                    const t = data.turrets[id];
+                    if (!t) return alert("Invalid turret");
 
-                targetTheta = g.theta;
-                targetZ = g.z;
-            }}
+                    targetTheta = t.theta;
+                    targetZ = 0;
+                }}
+                else if (selected.startsWith('globe_')) {{
+                    const idx = parseInt(selected.split('_')[1], 10) - 1;
+                    const g = data.globes[idx];
+                    if (!g) return alert("Invalid globe");
 
-            // SHORTEST ANGLE FROM ROBOT TO TARGET
-            const dTheta = angularDifference(targetTheta, robotTheta);
+                    targetTheta = g.theta;
+                    targetZ = g.z;
+                }}
 
-            // bed rotation
-            let bedDeg = dTheta * 180 / Math.PI;
+                // shortest signed angle
+                const dTheta = angularDifference(targetTheta, robotTheta);
 
-            // laser elevation
-            let laserDeg = computeLaserElevation(dTheta, robotZ, targetZ);
+                // bed rotation
+                let bedDeg = dTheta * 180 / Math.PI;
 
-            // mechanical limits (unchanged)
-            bedDeg = Math.max(-80, Math.min(80, bedDeg));
-            laserDeg = Math.max(-80, Math.min(80, laserDeg));
+                // laser elevation
+                let laserDeg = computeLaserElevation(dTheta, robotZ, targetZ);
 
-            document.getElementById('bedRotation').value = bedDeg.toFixed(1);
-            document.getElementById('laserRotation').value = laserDeg.toFixed(1);
+                // mechanical limits (unchanged)
+                bedDeg = Math.max(-80, Math.min(80, bedDeg));
+                laserDeg = Math.max(-80, Math.min(80, laserDeg));
 
-            await sendValue("bedRotation", bedDeg);
-            await sendValue("laserRotation", laserDeg);
+                document.getElementById('bedRotation').value = bedDeg.toFixed(1);
+                document.getElementById('laserRotation').value = laserDeg.toFixed(1);
 
-            await fetch('/toggleLaser', {{ method: 'POST' }});
-            await new Promise(r => setTimeout(r, 3000));
-            await fetch('/toggleLaser', {{ method: 'POST' }});
+                console.log("Aiming:", {{ bedDeg, laserDeg }}); // debug, safe to remove
+
+                await sendValue("bedRotation", bedDeg);
+                await sendValue("laserRotation", laserDeg);
+
+                await fetch('/toggleLaser', {{ method: 'POST' }});
+                await new Promise(r => setTimeout(r, 3000));
+                await fetch('/toggleLaser', {{ method: 'POST' }});
         }}
 
 
