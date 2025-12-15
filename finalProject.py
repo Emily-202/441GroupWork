@@ -888,6 +888,7 @@ class Stepper:
     
     # moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
+        """
         C=2*Globalradius*math.sin((targetAngle-Globalangle)/2)
 
         # Prevents division by zero
@@ -901,6 +902,24 @@ class Stepper:
         # phi=math.degrees(phi)
         # phi=-phi
         self.goAngle(phi)
+        """
+
+        R = 300           # radius of circle in cm (diameter 600 cm)
+        LASER_H = 20.955  # laser height from floor
+        MIN = -80         # mechanical limit
+        MAX = 80          # mechanical limit
+
+        # Horizontal chord distance from bed rotation
+        dTheta = abs(targetAngle) * math.pi / 180
+        horizontalDist = max(2 * R * math.sin(dTheta / 2), 1e-6)
+
+        # Vertical aiming angle in degrees
+        angleDeg = math.degrees(math.atan2(targetHeight - LASER_H, horizontalDist))
+
+        # Clamp to mechanical limits
+        angleDeg = max(MIN, min(MAX, angleDeg))
+
+        return angleDeg
 
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
