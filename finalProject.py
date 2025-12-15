@@ -904,22 +904,33 @@ class Stepper:
         self.goAngle(phi)
         """
 
-        R = 300           # radius of circle in cm (diameter 600 cm)
-        LASER_H = 20.955  # laser height from floor
-        MIN = -80         # mechanical limit
-        MAX = 80          # mechanical limit
+        # --- Constants ---
+        R = Globalradius           # cm
+        LASER_H = Globalheight     # cm
+        MIN = -80
+        MAX = 80
 
-        # Horizontal chord distance from bed rotation
-        dTheta = abs(targetAngle) * math.pi / 180
-        horizontalDist = max(2 * R * math.sin(dTheta / 2), 1e-6)
+        # --- Angular separation (SIGNED, radians) ---
+        dTheta = (targetAngle - Globalangle + math.pi) % (2 * math.pi) - math.pi
 
-        # Vertical aiming angle in degrees
-        angleDeg = math.degrees(math.atan2(horizontalDist, targetHeight - LASER_H))
+        # --- Horizontal distance via chord length ---
+        C = max(2 * R * math.sin(abs(dTheta) / 2), 1e-6)
 
-        # Clamp to mechanical limits
+        # --- Vertical difference ---
+        dz = targetHeight - LASER_H
+
+        # --- Correct atan2 usage ---
+        angleDeg = math.degrees(math.atan2(dz, C))
+
+        # --- Clamp to mechanical limits ---
         angleDeg = max(MIN, min(MAX, angleDeg))
 
-        return angleDeg
+        print(
+            f"[Y] dTheta={math.degrees(dTheta):.1f}°, "
+            f"C={C:.1f}cm, dz={dz:.1f}cm → angle={angleDeg:.1f}°"
+        )
+
+        self.goAngle(angleDeg)
 
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
