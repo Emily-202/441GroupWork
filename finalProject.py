@@ -825,7 +825,7 @@ class Stepper:
         # phi=math.atan2((targetHeight-Globalheight),C)
         # phi=math.degrees(phi)
         # phi=-phi
-        self.goAngle(delta)
+        self.rotate(delta)
 
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
