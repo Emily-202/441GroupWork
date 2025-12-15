@@ -324,40 +324,33 @@ def generateHTML():
 
             const data = await (await fetch('/targets')).json();
 
-            // robot position COMES FROM SERVER
-            const robotTheta = data.robot.theta;
-            const robotZ = data.robot.z;
-
-            let targetTheta = 0;
-            let targetZ = 0;
+            let bedDeg = 0;
+            let laserDeg = 0;
 
             if (selected.startsWith('turret_')) {{
                 const id = selected.split('_')[1];
                 const t = data.turrets[id];
                 if (!t) return alert("Invalid turret");
 
-                targetTheta = t.theta;
-                targetZ = 0;
+                // Bed rotation = angular separation from robot
+                bedDeg = t.theta * 180 / Math.PI;
+
+                // Laser elevation uses ABSOLUTE bed rotation as separation
+                const dTheta = Math.abs(bedDeg) * Math.PI / 180;
+                laserDeg = computeLaserAngleFromSeparation(dTheta, 0);
             }}
             else if (selected.startsWith('globe_')) {{
-                const idx = parseInt(selected.split('_')[1], 10) - 1;
-                const g = data.globes[idx];
+                const id = parseInt(selected.split('_')[1]) - 1;
+                const g = data.globes[id];
                 if (!g) return alert("Invalid globe");
 
-                targetTheta = g.theta;
-                targetZ = g.z;
+                bedDeg = g.theta * 180 / Math.PI;
+
+                const dTheta = Math.abs(bedDeg) * Math.PI / 180;
+                laserDeg = computeLaserAngleFromSeparation(dTheta, g.z);
             }}
 
-            // SHORTEST ANGLE FROM ROBOT TO TARGET
-            const dTheta = angularDifference(targetTheta, robotTheta);
-
-            // bed rotation
-            let bedDeg = dTheta * 180 / Math.PI;
-
-            // laser elevation
-            let laserDeg = computeLaserElevation(dTheta, robotZ, targetZ);
-
-            // mechanical limits (unchanged)
+            // mechanical limits
             bedDeg = Math.max(-80, Math.min(80, bedDeg));
             laserDeg = Math.max(-80, Math.min(80, laserDeg));
 
@@ -367,6 +360,7 @@ def generateHTML():
             await sendValue("bedRotation", bedDeg);
             await sendValue("laserRotation", laserDeg);
 
+            // turn laser on/off
             await fetch('/toggleLaser', {{ method: 'POST' }});
             await new Promise(r => setTimeout(r, 3000));
             await fetch('/toggleLaser', {{ method: 'POST' }});
