@@ -869,7 +869,8 @@ class Stepper:
         p.start()
         p.join()
     
-    # moves the motor in the XZ when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero   
+    # moves the motor in the XZ when given our angular position with respect to the center
+    # and zero and a targets angular position with respect to the center 
     def goAngleXZ(self, targetAngle):
         """
         alpha=.5*(math.pi-abs(targetAngle-Globalangle))
@@ -886,7 +887,9 @@ class Stepper:
 
         self.goAngle(dtheta_deg)
     
-    # moves the motor in the Y when given our angular position with respect to the center and zero and a targets angular position with respect to the center and zero and circle radius our own height and target height     
+    # moves the motor in the Y when given our angular position with respect to the center
+    # and zero and a targets angular position with respect to the center
+    # and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
         """
         C=2*Globalradius*math.sin((targetAngle-Globalangle)/2)
@@ -906,8 +909,8 @@ class Stepper:
 
         LASER_H = 20.955  # laser height
         TARGET_H = 1      # turret height
-        MIN = -80
-        MAX = 80
+        MIN = -20
+        MAX = 20
 
         # Horizontal distance along the chord
         C = 2 * Globalradius * math.sin((targetAngle - Globalangle) / 2)
