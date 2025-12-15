@@ -676,7 +676,7 @@ class StepperHandler(BaseHTTPRequestHandler):
 
                     bed_angle_deg = math.degrees(target_theta)
                     with self.motor_laser.angle.get_lock():
-                        laser_angle_deg = normalize_deg(self.motor_laser.angle.value)
+                        laser_angle_deg = self.motor_laser.angle.value
                 else:
                     self._send_json({"success": False, "message": "Turret not found"})
                     return
@@ -698,8 +698,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 
                 # Laser angle: move in Y plane (height difference)
                 target_z = globe.get("z", 0)
-                radius = Globalradius  # Replace with actual radius if known
-                self.motor_laser.goAngleY(target_theta_rad, target_z)
+                StepperHandler.m2.goAngleY(target_theta_rad, target_z)
                 
                 # For UI feedback, convert target_theta_rad to degrees
                 bed_angle_deg = math.degrees(target_theta_rad)
