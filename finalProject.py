@@ -246,7 +246,7 @@ def generateHTML():
             }}
         }}
 
-        const R = 300; // cm (radius of 600cm diameter circle)
+        const R = 300; // radius in cm
 
         function normalizeAngle(rad) {{
             return Math.atan2(Math.sin(rad), Math.cos(rad));
@@ -319,10 +319,12 @@ def generateHTML():
 
             const data = await (await fetch('/targets')).json();
 
+            // robot position COMES FROM SERVER
             const robotTheta = data.robot.theta;
             const robotZ = data.robot.z;
 
-            let targetTheta, targetZ;
+            let targetTheta = 0;
+            let targetZ = 0;
 
             if (selected.startsWith('turret_')) {{
                 const id = selected.split('_')[1];
@@ -341,16 +343,16 @@ def generateHTML():
                 targetZ = g.z;
             }}
 
-            // shortest signed angular difference
+            // SHORTEST ANGLE FROM ROBOT TO TARGET
             const dTheta = angularDifference(targetTheta, robotTheta);
 
-            // bed rotation (yaw)
+            // bed rotation
             let bedDeg = dTheta * 180 / Math.PI;
 
-            // laser elevation (pitch)
+            // laser elevation
             let laserDeg = computeLaserElevation(dTheta, robotZ, targetZ);
 
-            // mechanical safety limits
+            // mechanical limits (unchanged)
             bedDeg = Math.max(-80, Math.min(80, bedDeg));
             laserDeg = Math.max(-80, Math.min(80, laserDeg));
 
@@ -360,7 +362,6 @@ def generateHTML():
             await sendValue("bedRotation", bedDeg);
             await sendValue("laserRotation", laserDeg);
 
-            // optional fire sequence
             await fetch('/toggleLaser', {{ method: 'POST' }});
             await new Promise(r => setTimeout(r, 3000));
             await fetch('/toggleLaser', {{ method: 'POST' }});
