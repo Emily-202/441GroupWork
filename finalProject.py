@@ -657,7 +657,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 
                 # Laser angle: move in Y plane (height difference)
                 target_z = globe.get("z", 0)
-                StepperHandler.m2.goAngleY(target_theta_rad, target_z)
+                self.motor_laser.goAngleY(target_theta_rad, target_z)
                 
                 # For UI feedback, convert target_theta_rad to degrees
                 bed_angle_deg = math.degrees(target_theta_rad)
