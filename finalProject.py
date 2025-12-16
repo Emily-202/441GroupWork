@@ -857,31 +857,36 @@ class Stepper:
         # phi=-phi
         self.goAngle(phi)
         """
-        # Signed angular difference around ring
+        # Signed angular difference around circle (radians)
         dtheta = targetAngle - Globalangle
         dtheta = (dtheta + math.pi) % (2 * math.pi) - math.pi
 
-        # Straight-line horizontal distance (CHORD)
-        D = 2 * Globalradius * math.sin(abs(dtheta) / 2)
+        # Horizontal distance along ring (ARC length)
+        C = Globalradius * abs(dtheta)
 
-        if D < 1e-6:
+        # Prevent divide-by-zero
+        if C < 1e-6:
             print("[AngleY] Target inline — skipping tilt")
             return
 
-        # Vertical tilt (negative = down)
-        phi_rad = math.atan2(targetHeight - Globalheight, D)
-        phi_deg = math.degrees(phi_rad)
+        # Vertical difference (cm)
+        # Globalheight must be the LASER HEIGHT (20.955 cm)
+        dh = targetHeight - Globalheight
+
+        # Tilt angle (negative = down)
+        phi = math.atan2(dh, C)
+        phi_deg = math.degrees(phi)
 
         # Clamp to mechanical limits
         phi_deg = max(-80.0, min(80.0, phi_deg))
 
         print(
             f"[AngleY] Δθ={math.degrees(dtheta):.1f}°, "
-            f"D={D:.1f} cm, "
-            f"φ={phi_deg:.1f}°"
+            f"C={C:.1f}cm, "
+            f"Δh={dh:.3f}cm, "
+            f"φ={phi_deg:.2f}°"
         )
 
-        # Absolute tilt command
         self.goAngle(phi_deg)
 
     def hoizontalZero(self):
