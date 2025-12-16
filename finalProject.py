@@ -858,19 +858,31 @@ class Stepper:
         self.goAngle(phi)
         """
 
-        # Horizontal distance along the chord
-        C = 2 * Globalradius * math.sin((targetAngle - Globalangle) / 2)
+        # Signed angular difference around circle
+        dtheta = targetAngle - Globalangle
+        dtheta = (dtheta + math.pi) % (2 * math.pi) - math.pi
 
-        # Compute vertical angle
+        # Horizontal distance (always positive)
+        C = 2 * Globalradius * abs(math.sin(dtheta / 2))
+
+        # Prevent divide-by-zero (target straight ahead)
+        if C < 1e-6:
+            print("[AngleY] Target inline — skipping tilt")
+            return
+
+        # Vertical angle (radians → degrees)
         phi = math.atan2(targetHeight - Globalheight, C)
         phi_deg = math.degrees(phi)
 
-        # Invert if needed (depends on motor direction)
+        # Mechanical sign correction (ONE place only)
         phi_deg = -phi_deg
 
-        # Clamp to mechanical limits
+        # Clamp to hardware limits
         phi_deg = max(-80, min(80, phi_deg))
 
+        print(f"[AngleY] Δθ={math.degrees(dtheta):.1f}°, C={C:.1f}, φ={phi_deg:.1f}°")
+
+        # Absolute command
         self.goAngle(phi_deg)
 
     def hoizontalZero(self):
