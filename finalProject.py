@@ -628,7 +628,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 turret = data.get("turrets", {}).get(tid)
                 if turret:
                     target_theta = turret["theta"]
-                    target_z = 1  # Always aiming at base of turrets
+                    target_z = 0.5  # Always aiming at base of turrets
 
                     self.motor_bed.goAngleXZ(target_theta)
                     self.motor_laser.goAngleY(target_theta, target_z)
@@ -857,29 +857,27 @@ class Stepper:
         # phi=-phi
         self.goAngle(phi)
         """
-        # Signed angular difference around the ring (−π … +π)
+        # Signed angular difference around ring
         dtheta = targetAngle - Globalangle
         dtheta = (dtheta + math.pi) % (2 * math.pi) - math.pi
 
-        # Horizontal distance along the ring (ARC length, not chord)
-        D = Globalradius * abs(dtheta)
+        # Straight-line horizontal distance (CHORD)
+        D = 2 * Globalradius * math.sin(abs(dtheta) / 2)
 
-        # Prevent divide-by-zero when directly inline
         if D < 1e-6:
             print("[AngleY] Target inline — skipping tilt")
             return
 
-        # Vertical tilt angle
-        # target below turret → negative angle
+        # Vertical tilt (negative = down)
         phi_rad = math.atan2(targetHeight - Globalheight, D)
-        phi_deg = -math.degrees(phi_rad)
+        phi_deg = math.degrees(phi_rad)
 
         # Clamp to mechanical limits
         phi_deg = max(-80.0, min(80.0, phi_deg))
 
         print(
             f"[AngleY] Δθ={math.degrees(dtheta):.1f}°, "
-            f"D={D:.1f}cm, "
+            f"D={D:.1f} cm, "
             f"φ={phi_deg:.1f}°"
         )
 
