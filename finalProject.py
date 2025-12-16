@@ -842,6 +842,7 @@ class Stepper:
     # and zero and a targets angular position with respect to the center
     # and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
+        """
         C=2*Globalradius*math.sin((targetAngle-Globalangle)/2)
 
         # Prevents division by zero
@@ -855,35 +856,35 @@ class Stepper:
         # phi=math.degrees(phi)
         # phi=-phi
         self.goAngle(phi)
-
         """
-        # Signed angular difference around circle
+        # Signed angular difference around the ring (−π … +π)
         dtheta = targetAngle - Globalangle
         dtheta = (dtheta + math.pi) % (2 * math.pi) - math.pi
 
-        # Horizontal distance (always positive)
-        C = 2 * Globalradius * abs(math.sin(dtheta / 2))
+        # Horizontal distance along the ring (ARC length, not chord)
+        D = Globalradius * abs(dtheta)
 
-        # Prevent divide-by-zero (target straight ahead)
-        if C < 1e-6:
+        # Prevent divide-by-zero when directly inline
+        if D < 1e-6:
             print("[AngleY] Target inline — skipping tilt")
             return
 
-        # Vertical angle (radians → degrees)
-        phi = math.atan2(targetHeight - Globalheight, C)
-        phi_deg = math.degrees(phi)
+        # Vertical tilt angle
+        # target below turret → negative angle
+        phi_rad = math.atan2(targetHeight - Globalheight, D)
+        phi_deg = -math.degrees(phi_rad)
 
-        # Mechanical sign correction (ONE place only)
-        phi_deg = -phi_deg
+        # Clamp to mechanical limits
+        phi_deg = max(-80.0, min(80.0, phi_deg))
 
-        # Clamp to hardware limits
-        phi_deg = max(-80, min(80, phi_deg))
+        print(
+            f"[AngleY] Δθ={math.degrees(dtheta):.1f}°, "
+            f"D={D:.1f}cm, "
+            f"φ={phi_deg:.1f}°"
+        )
 
-        print(f"[AngleY] Δθ={math.degrees(dtheta):.1f}°, C={C:.1f}, φ={phi_deg:.1f}°")
-
-        # Absolute command
+        # Absolute tilt command
         self.goAngle(phi_deg)
-        """
 
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
