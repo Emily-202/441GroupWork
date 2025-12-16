@@ -832,11 +832,19 @@ class Stepper:
     # moves the motor in the XZ when given our angular position with respect to the center
     # and zero and a targets angular position with respect to the center 
     def goAngleXZ(self, targetAngle):
-        alpha=.5*(math.pi-abs(targetAngle-Globalangle))
-        alpha=math.degrees(alpha)
-        if (targetAngle-Globalangle <0):
-            alpha=-alpha
-        self.goAngle(alpha)
+        # Signed angular difference
+        alpha = targetAngle - Globalangle
+
+        # Wrap to [-pi, pi] (shortest path)
+        alpha = (alpha + math.pi) % (2 * math.pi) - math.pi
+
+        # Convert to degrees
+        alpha_deg = math.degrees(alpha)
+
+        # Clamp to mechanical limits
+        alpha_deg = max(-80, min(80, alpha_deg))
+
+        self.goAngle(alpha_deg)
     
     # moves the motor in the Y when given our angular position with respect to the center
     # and zero and a targets angular position with respect to the center
