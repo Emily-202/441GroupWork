@@ -630,12 +630,9 @@ class StepperHandler(BaseHTTPRequestHandler):
                     target_theta = turret["theta"]
                     target_z = 0.5  # Always aiming at base of turrets
 
-                    self.motor_bed.goAngleXZ(target_theta)
-                    self.motor_laser.goAngleY(target_theta, target_z)
+                    laser_angle_deg = self.motor_laser.goAngleY(target_theta, target_z)
+                    bed_angle_deg = self.motor_bed.goAngleXZ(target_theta)
 
-                    bed_angle_deg = math.degrees(target_theta)
-                    with self.motor_laser.angle.get_lock():
-                        laser_angle_deg = self.motor_laser.angle.value
                 else:
                     self._send_json({"success": False, "message": "Turret not found"})
                     return
@@ -652,17 +649,11 @@ class StepperHandler(BaseHTTPRequestHandler):
                 # --- Use Stepper movement system formulas ---
                 # Bed angle: move in XZ plane (2D angular displacement)
                 target_theta_rad = globe["theta"]
-                self.motor_bed.goAngleXZ(target_theta_rad)
-                #comment changed robot_bed_degree to no longer convert to radians 
                 
                 # Laser angle: move in Y plane (height difference)
                 target_z = globe.get("z", 0)
-                self.motor_laser.goAngleY(target_theta_rad, target_z)
-                
-                # For UI feedback, convert target_theta_rad to degrees
-                bed_angle_deg = math.degrees(target_theta_rad)
-                with self.motor_laser.angle.get_lock():
-                    laser_angle_deg = self.motor_laser.angle.value
+                bed_angle_deg = self.motor_bed.goAngleXZ(target_theta_rad)
+                laser_angle_deg = self.motor_laser.goAngleY(target_theta_rad, target_z)
 
             else:
                 self._send_json({"success": False, "message": "Unknown target"})
@@ -837,6 +828,7 @@ class Stepper:
         if (targetAngle-Globalangle >0):
             alpha=-alpha
         self.goAngle(alpha)
+        return alpha
     
     # moves the motor in the Y when given our angular position with respect to the center
     # and zero and a targets angular position with respect to the center
@@ -888,6 +880,7 @@ class Stepper:
         )
 
         self.goAngle(phi_deg)
+        return phi_deg
 
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
