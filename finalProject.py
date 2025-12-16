@@ -842,7 +842,6 @@ class Stepper:
     # and zero and a targets angular position with respect to the center
     # and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
-        """
         C=2*Globalradius*math.sin((targetAngle-Globalangle)/2)
 
         # Prevents division by zero
@@ -856,8 +855,8 @@ class Stepper:
         # phi=math.degrees(phi)
         # phi=-phi
         self.goAngle(phi)
-        """
 
+        """
         # Signed angular difference around circle
         dtheta = targetAngle - Globalangle
         dtheta = (dtheta + math.pi) % (2 * math.pi) - math.pi
@@ -884,6 +883,7 @@ class Stepper:
 
         # Absolute command
         self.goAngle(phi_deg)
+        """
 
     def hoizontalZero(self):
         theta=math.atan2(Globalheight,Globalradius)
