@@ -595,6 +595,15 @@ class StepperHandler(BaseHTTPRequestHandler):
                     return
                 target_theta = turret["theta"]
 
+                # 🚫 SKIP if turret is at robot's current angular position
+                if target_theta == Globalangle:
+                    print("[SKIP] Turret is at robot angular position")
+                    self._send_json({
+                        "success": False,
+                        "message": "Target skipped (same angular position as robot)"
+                    })
+                    return
+
                 bed_angle_deg = math.degrees(target_theta)
                 laser_angle_deg = math.degrees(
                     math.atan2(-Globalheight,
