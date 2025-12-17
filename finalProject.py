@@ -15,7 +15,7 @@ GPIO.setup(laserpin, GPIO.OUT)
 GPIO.output(laserpin, GPIO.LOW)
 
 ## Global Variables ------------------------------------------------------------------
-Globalradius=300
+Globalradius=167.64
 Globalangle=0
 Globalheight=20.955
 
@@ -667,6 +667,18 @@ class StepperHandler(BaseHTTPRequestHandler):
                 if turret:
                     target_theta = turret["theta"]
                     target_z = 0.5  # Always aiming at base of turrets
+
+                    ANG_EPS = math.radians(2.0)
+
+                    dtheta = (target_theta - Globalangle + math.pi) % (2*math.pi) - math.pi
+                    if abs(dtheta) < ANG_EPS:
+                        print("[AUTONOMOUS SKIP] Target at robot angular position")
+                        self._send_json({
+                            "success": True,
+                            "bed": robot_bed_deg,
+                            "laser": robot_laser_deg
+                        })
+                        return
 
                     laser_angle_deg = self.motor_laser.goAngleY(target_theta, target_z)
                     bed_angle_deg = self.motor_bed.goAngleXZ(target_theta)
