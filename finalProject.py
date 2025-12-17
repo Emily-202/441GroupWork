@@ -15,6 +15,7 @@ GPIO.setup(laserpin, GPIO.OUT)
 GPIO.output(laserpin, GPIO.LOW)
 
 ## Global Variables ------------------------------------------------------------------
+Globalradius=300
 Globalradius=167.64
 Globalangle=0
 Globalheight=20.955
@@ -22,7 +23,7 @@ Globalheight=20.955
 ## Helpful Websites ------------------------------------------------------------------
 # https://www.w3schools.com/css/css3_buttons.asp
 # http://192.168.1.254:8000/positions.json
-# test --> http://192.168.66.122:8000/positions.json
+# old --> http://192.168.66.122:8000/positions.json
 
 
 ## Find JSON File --------------------------------------------------------------------
@@ -544,7 +545,7 @@ class StepperHandler(BaseHTTPRequestHandler):
             self.send_error(404)
 
     def do_POST(self):
-        
+
         # Setting turret position update
         if self.path == "/setRobotPosition":
             length = int(self.headers.get("Content-Length", 0))
@@ -595,6 +596,16 @@ class StepperHandler(BaseHTTPRequestHandler):
                     self._send_json({"success": False, "message": "Turret not found"})
                     return
                 target_theta = turret["theta"]
+
+                # 🚫 SKIP if turret is at robot's current angular position
+                ANG_EPS = math.radians(2.0)
+                if abs(target_theta - Globalangle) < ANG_EPS:
+                    print("[SKIP] Turret is at robot angular position")
+                    self._send_json({
+                        "success": False,
+                        "message": "Target skipped (same angular position as robot)"
+                    })
+                    return
 
                 bed_angle_deg = math.degrees(target_theta)
                 laser_angle_deg = math.degrees(
@@ -658,13 +669,15 @@ class StepperHandler(BaseHTTPRequestHandler):
                     target_theta = turret["theta"]
                     target_z = 0.5  # Always aiming at base of turrets
 
-                    # 🚫 SKIP if turret is at robot's current angular position
                     ANG_EPS = math.radians(2.0)
-                    if abs(target_theta - Globalangle) < ANG_EPS:
-                        print("[SKIP] Turret is at robot angular position")
+
+                    dtheta = (target_theta - Globalangle + math.pi) % (2*math.pi) - math.pi
+                    if abs(dtheta) < ANG_EPS:
+                        print("[AUTONOMOUS SKIP] Target at robot angular position")
                         self._send_json({
-                            "success": False,
-                            "message": "Target skipped (same angular position as robot)"
+                            "success": True,
+                            "bed": robot_bed_deg,
+                            "laser": robot_laser_deg
                         })
                         return
 
@@ -687,7 +700,7 @@ class StepperHandler(BaseHTTPRequestHandler):
                 # --- Use Stepper movement system formulas ---
                 # Bed angle: move in XZ plane (2D angular displacement)
                 target_theta_rad = globe["theta"]
-                
+
                 # Laser angle: move in Y plane (height difference)
                 target_z = globe.get("z", 0)
                 bed_angle_deg = self.motor_bed.goAngleXZ(target_theta_rad)
@@ -713,7 +726,7 @@ class StepperHandler(BaseHTTPRequestHandler):
         content_length = int(self.headers['Content-Length'])
         body = self.rfile.read(content_length).decode()
         params = urllib.parse.parse_qs(body)
-        
+
 
         print("Received POST data:", params)
         is_zero = "zero" in params
@@ -805,7 +818,7 @@ class Stepper:
     def __step(self, dir):
         self.step_state += dir    # increment/decrement the step
         self.step_state %= 8      # ensure result stays in [0,7]
-        
+
         # 4-bit coil pattern for this motor
         mask   = 0b1111 << self.shifter_bit_start
         pattern = Stepper.seq[self.step_state] << self.shifter_bit_start
@@ -841,7 +854,7 @@ class Stepper:
     # Move to an absolute angle taking the shortest possible path:
     def goAngle(self, tarAngle):
         # read angle safely
-        
+
         with self.angle.get_lock():
             curAngle = self.angle.value
 
@@ -852,12 +865,12 @@ class Stepper:
             tarAngle=-80
         delta = ((tarAngle - curAngle + 540) % 360) - 180
         #delta = tarAngle - curAngle    
-        
+
         print(f'delta: {delta}')
         p = multiprocessing.Process(target=self.__rotate, args=(delta,))
         p.start()
         p.join()
-    
+
     # moves the motor in the XZ when given our angular position with respect to the center
     # and zero and a targets angular position with respect to the center 
     def goAngleXZ(self, targetAngle):
@@ -867,7 +880,7 @@ class Stepper:
             alpha=-alpha
         self.goAngle(alpha)
         return alpha
-    
+
     # moves the motor in the Y when given our angular position with respect to the center
     # and zero and a targets angular position with respect to the center
     # and zero and circle radius our own height and target height     
@@ -911,7 +924,7 @@ class Stepper:
         p = multiprocessing.Process(target=self.__rotate, args=(theta,))
         p.start()
         p.join()
-    
+
     # Set the motor zero point
     def zero(self):
         with self.angle.get_lock():
