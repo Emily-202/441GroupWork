@@ -423,45 +423,72 @@ def generateHTML():
         }}
         
         async function startTrial() {{
-            // Load all turret and globe positions
             const data = await (await fetch('/targets')).json();
 
-            // Build one combined list: [ {{bedDeg:x, laserDeg:y}}, ... ]
-            let sequence = [];
+            // Build ordered target list (strings match backend expectations)
+            let targets = [];
 
-            // ====== Add turrets ======
-            for (const [id, vals] of Object.entries(data.turrets || {{}})) {{
-                sequence.push({{
-                    bed: vals.theta * 180 / Math.PI,
-                    laser: 0
-                }});
+            // Turrets first
+            for (const id of Object.keys(data.turrets || {{}})) {{
+                targets.push(`turret_${id}`);
             }}
 
-            // ====== Add globes ======
-            (data.globes || []).forEach(g => {{
-                sequence.push({{
-                    bed: g.theta * 180 / Math.PI,
-                    laser: g.z
-                }});
+            // Then globes
+            (data.globes || []).forEach((_, i) => {{
+                targets.push(`globe_${{i + 1}}`);
             }});
 
-            // ====== RUN AUTONOMOUS TRIAL ======
-            for (let i = 0; i < sequence.length; i++) {{
-                const target = sequence[i];
-                console.log(`Moving to target ${{i+1}}/${{sequence.length}}`);
+            if (targets.length === 0) {{
+                alert("No targets found.");
+                return;
+            }}
 
-                // Move motors
-                await sendValue("bedRotation", target.bed);
-                await sendValue("laserRotation", target.laser);
+            // Current robot orientation from UI
+            let bed = document.getElementById('bedRotation').value;
+            let laser = document.getElementById('laserRotation').value;
+
+            for (let i = 0; i < targets.length; i++) {{
+                const target = targets[i];
+                console.log(`▶ Target ${{i + 1}}/${{targets.length}}: ${{target}}`);
+
+                const body = new URLSearchParams();
+                body.append("chosenTarget", target);
+                body.append("robotPosition", `${{bed}},${{laser}}`);
+
+                let result;
+                try {{
+                    const response = await fetch('/moveToTarget', {{
+                        method: 'POST',
+                        headers: {{ 'Content-Type': 'application/x-www-form-urlencoded' }},
+                        body
+                    }});
+                    result = await response.json();
+                }} catch (err) {{
+                    console.error("Move failed:", err);
+                    alert("Autonomous trial aborted.");
+                    return;
+                }}
+
+                if (!result.success) {{
+                    alert(result.message || "Move failed.");
+                    return;
+                }}
+
+                // Update UI with ACTUAL motor angles returned by backend
+                bed = result.bed;
+                laser = result.laser;
+
+                document.getElementById('bedRotation').value = bed.toFixed(1);
+                document.getElementById('laserRotation').value = laser.toFixed(1);
                 updateOrientationDisplay();
 
-                // Turn laser ON (3 sec) then OFF
+                // Laser ON (3 sec)
                 await fetch('/toggleLaser', {{ method: 'POST' }});
-                await new Promise(res => setTimeout(res, 3000));
+                await new Promise(r => setTimeout(r, 3000));
                 await fetch('/toggleLaser', {{ method: 'POST' }});
 
                 // Small pause before next target
-                await new Promise(res => setTimeout(res, 500));
+                await new Promise(r => setTimeout(r, 500));
             }}
 
             alert("Autonomous trial complete.");
