@@ -834,21 +834,6 @@ class Stepper:
     # and zero and a targets angular position with respect to the center
     # and zero and circle radius our own height and target height     
     def goAngleY(self, targetAngle,targetHeight):
-        """
-        C=2*Globalradius*math.sin((targetAngle-Globalangle)/2)
-
-        # Prevents division by zero
-        if abs(C) < 1e-6:
-            print("[AngleY] Target inline with robot — skipping Y motion")
-            return
-
-        phi = math.degrees(math.atan2(C,targetHeight - Globalheight))
-
-        # phi=math.atan2((targetHeight-Globalheight),C)
-        # phi=math.degrees(phi)
-        # phi=-phi
-        self.goAngle(phi)
-        """
         # Signed angular difference around circle (radians)
         dtheta = targetAngle - Globalangle
         dtheta = (dtheta + math.pi) % (2 * math.pi) - math.pi
