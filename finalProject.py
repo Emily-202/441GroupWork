@@ -430,7 +430,7 @@ def generateHTML():
 
             // Turrets first
             for (const id of Object.keys(data.turrets || {{}})) {{
-                targets.push(`turret_${id}`);
+                targets.push(`turret_${{id}}`);
             }}
 
             // Then globes
