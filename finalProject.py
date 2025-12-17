@@ -596,7 +596,8 @@ class StepperHandler(BaseHTTPRequestHandler):
                 target_theta = turret["theta"]
 
                 # 🚫 SKIP if turret is at robot's current angular position
-                if target_theta == Globalangle:
+                ANG_EPS = math.radians(2.0)
+                if abs(target_theta - Globalangle) < ANG_EPS:
                     print("[SKIP] Turret is at robot angular position")
                     self._send_json({
                         "success": False,
